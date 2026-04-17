@@ -1,0 +1,64 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ecg_collection
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/ecg_intelligence_analysis_system?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: root
+    password: root
+    hikari:
+      pool-name: EcgHikariPool
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      validation-timeout: 5000
+      keepalive-time: 300000
+      connection-test-query: SELECT 1
+      auto-commit: true
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.hnkjzy.ecg_collection.model.entity
+  global-config:
+    banner: false
+    db-config:
+      # 主键策略：ASSIGN_ID（雪花算法）
+      id-type: ASSIGN_ID
+      # 逻辑删除字段与值
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+
+# Knife4j + OpenAPI
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+# JWT 基础配置
+jwt:
+  # HS256 至少 32 字节
+  secret-key: ecg_collection_demo_secret_key_32bytes_plus
+  expiration-minutes: 120
+  issuer: ecg-collection
+
+logging:
+  level:
+    com.hnkjzy.ecg_collection.mapper: debug
