@@ -5,8 +5,6 @@
 -- 核心原则：全程无物理外键约束，所有关联通过业务 ID 实现；核心展示字段冗余设计，单表即可完成列表渲染；全表逻辑删除，满足医疗数据合规追溯要求
 -- 注释规范：表注释说明表的核心作用与业务定位；字段注释说明字段含义、业务规则、枚举值定义；每个表后附详细业务逻辑说明
 
-
-
 -- 脚本使用说明
 -- 执行环境：建议在 MySQL 5.7 及以上版本执行，InnoDB 引擎支持事务与行级锁，适合医疗系统的高并发场景。
 -- 主键生成：所有表的主键均为BIGINT类型，建议使用 ** 雪花算法（Snowflake）** 生成唯一 ID，避免自增 ID 的性能瓶颈与数据泄露风险。
@@ -17,9 +15,9 @@
 -- 创建数据库
 -- ----------------------------
 CREATE DATABASE IF NOT EXISTS `ecg_intelligence_analysis_system`
-DEFAULT CHARACTER SET utf8mb4
-DEFAULT COLLATE utf8mb4_unicode_ci
-COMMENT '心电图情报分析系统：支撑心电数据采集、AI诊断、报告审核、预警监护、设备管理、患者管理、统计分析全业务流程的核心数据库';
+    DEFAULT CHARACTER SET utf8mb4
+    DEFAULT COLLATE utf8mb4_unicode_ci;
+#     COMMENT '心电图情报分析系统：支撑心电数据采集、AI诊断、报告审核、预警监护、设备管理、患者管理、统计分析全业务流程的核心数据库';
 
 USE `ecg_intelligence_analysis_system`;
 
@@ -48,7 +46,6 @@ CREATE TABLE `sys_role` (
 -- 2. 冗余字段：user_count由业务层通过「事件触发+定时任务」双机制更新，角色管理页面直接展示，无需实时COUNT查询。
 -- 3. 数据安全：采用逻辑删除，保留所有历史角色数据，满足审计追溯要求。
 
-
 -- ----------------------------
 -- 2. 系统权限域 - 角色权限关联表
 -- ----------------------------
@@ -67,6 +64,17 @@ CREATE TABLE `sys_role_permission` (
 -- 业务逻辑说明：
 -- 1. 关联逻辑：通过role_id与sys_role表业务关联，permission_code为权限唯一标识，权限列表由业务代码维护。
 -- 2. 性能优化：role_id建立索引，快速查询某角色的所有权限；无外键约束，提升权限配置的操作性能。
+
+
+# 科室(sys_department)
+#     ↓
+# 病区(sys_ward)
+#         ↓
+# 房间(sys_room)  【包含：房间号、床位总数】
+#         ↓
+# 床位(sys_bed)   【包含：所属房间、具体床号】
+#         ↓
+# 患者(patient_info)  【绑定具体床位】
 
 
 -- ----------------------------
@@ -104,7 +112,7 @@ CREATE TABLE `sys_user` (
                             `user_id` BIGINT NOT NULL COMMENT '用户唯一ID（雪花ID）',
                             `user_name` VARCHAR(64) NOT NULL COMMENT '登录账号',
                             `real_name` VARCHAR(32) NOT NULL COMMENT '人员真实姓名',
-                            `password` VARCHAR(128) NOT NULL COMMENT '加密存储密码（BCrypt加密）',
+                            `password` VARCHAR(128) NOT NULL COMMENT '加密存储密码',
                             `role_id` BIGINT DEFAULT NULL COMMENT '所属角色ID（业务关联，无外键约束）',
                             `role_name` VARCHAR(32) DEFAULT NULL COMMENT '所属角色名称（冗余快照，避免联查角色表）',
                             `dept_id` BIGINT DEFAULT NULL COMMENT '所属科室ID（业务关联，无外键约束）',
@@ -157,7 +165,76 @@ CREATE TABLE `sys_operation_log` (
 
 
 -- ----------------------------
--- 6. 患者管理域 - 患者信息主表
+-- 1. 病区表 sys_ward
+-- ----------------------------
+CREATE TABLE `sys_ward` (
+                            `ward_id` BIGINT NOT NULL COMMENT '病区唯一主键ID(雪花ID)',
+                            `ward_name` VARCHAR(64) NOT NULL COMMENT '病区名称，如：心血管内科一病区、呼吸重症病区',
+                            `ward_code` VARCHAR(32) NOT NULL COMMENT '病区唯一编码',
+                            `dept_id` BIGINT NOT NULL COMMENT '所属科室ID，关联sys_department科室表',
+                            `dept_name` VARCHAR(64) DEFAULT NULL COMMENT '所属科室名称(冗余快照，减少联查)',
+                            `floor` VARCHAR(20) DEFAULT NULL COMMENT '所在楼层',
+                            `sort_num` INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+                            `status` TINYINT NOT NULL DEFAULT 1 COMMENT '病区状态：0-停用 1-正常',
+                            `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                            `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                            `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
+                            PRIMARY KEY (`ward_id`),
+                            UNIQUE INDEX `uk_ward_code` (`ward_code`),
+                            INDEX `idx_dept_id` (`dept_id`),
+                            INDEX `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='病区表：用于管理医院下各个病区，一个科室包含多个病区，一个病区包含多个病房';
+
+-- ----------------------------
+-- 2. 房间表 sys_room
+-- ----------------------------
+CREATE TABLE `sys_room` (
+                            `room_id` BIGINT NOT NULL COMMENT '房间唯一主键ID(雪花ID)',
+                            `ward_id` BIGINT NOT NULL COMMENT '所属病区ID，关联sys_ward病区表',
+                            `ward_name` VARCHAR(64) DEFAULT NULL COMMENT '所属病区名称(冗余快照)',
+                            `room_no` VARCHAR(20) NOT NULL COMMENT '房间编号，如：101、302、ICU01',
+                            `room_type` TINYINT DEFAULT 1 COMMENT '房间类型：1-普通病房 2-监护病房 3-隔离病房 4-ICU',
+                            `bed_total` INT NOT NULL DEFAULT 0 COMMENT '当前房间规划床位总数',
+                            `remark` VARCHAR(255) DEFAULT NULL COMMENT '房间备注说明',
+                            `sort_num` INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+                            `status` TINYINT NOT NULL DEFAULT 1 COMMENT '房间状态：0-停用 1-正常',
+                            `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                            `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                            `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
+                            PRIMARY KEY (`room_id`),
+                            UNIQUE INDEX `uk_ward_roomno` (`ward_id`,`room_no`),
+                            INDEX `idx_ward_id` (`ward_id`),
+                            INDEX `idx_room_type` (`room_type`),
+                            INDEX `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间表：存储病区下所有病房信息，记录房间号、规划床位数、房间类型，一个房间包含多张床位';
+
+-- ----------------------------
+-- 3. 床位表 sys_bed
+-- ----------------------------
+CREATE TABLE `sys_bed` (
+                           `bed_id` BIGINT NOT NULL COMMENT '床位唯一主键ID(雪花ID)',
+                           `room_id` BIGINT NOT NULL COMMENT '所属房间ID，关联sys_room房间表',
+                           `room_no` VARCHAR(20) DEFAULT NULL COMMENT '所属房间号(冗余快照)',
+                           `ward_id` BIGINT NOT NULL COMMENT '所属病区ID(冗余，方便快速筛选)',
+                           `bed_no` VARCHAR(20) NOT NULL COMMENT '床位编号，如：1床、2床、A01',
+                           `bed_type` TINYINT DEFAULT 1 COMMENT '床位类型：1-普通床位 2-心电监护床位 3-重症床位',
+                           `bed_status` TINYINT NOT NULL DEFAULT 1 COMMENT '床位状态：1-空闲 2-已入住 3-维修 4-消毒中',
+                           `remark` VARCHAR(255) DEFAULT NULL COMMENT '床位备注',
+                           `sort_num` INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+                           `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                           `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                           `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删 1-已删',
+                           PRIMARY KEY (`bed_id`),
+                           UNIQUE INDEX `uk_room_bedno` (`room_id`,`bed_no`),
+                           INDEX `idx_room_id` (`room_id`),
+                           INDEX `idx_ward_id` (`ward_id`),
+                           INDEX `idx_bed_status` (`bed_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='床位表：单个床位信息，绑定具体房间，记录床号、使用状态，患者最终绑定到具体床位';
+
+-- ----------------------------
+-- 4. 重构后 患者信息主表 patient_info
+-- 移除原：current_dept_id、current_dept_name、bed_no
+-- 改为：ward_id 病区、bed_id 床位，通过床位反向关联房间
 -- ----------------------------
 CREATE TABLE `patient_info` (
                                 `patient_id` BIGINT NOT NULL COMMENT '患者唯一ID（雪花ID）',
@@ -167,9 +244,10 @@ CREATE TABLE `patient_info` (
                                 `age` INT DEFAULT NULL COMMENT '年龄（冗余字段，业务层根据birth_date自动计算更新）',
                                 `id_card` VARCHAR(18) DEFAULT NULL COMMENT '身份证号（脱敏存储，仅保留前6后4位）',
                                 `inpatient_no` VARCHAR(32) DEFAULT NULL COMMENT '住院号',
-                                `bed_no` VARCHAR(16) DEFAULT NULL COMMENT '床号',
-                                `current_dept_id` BIGINT DEFAULT NULL COMMENT '当前所属病区ID（业务关联，无外键约束）',
-                                `current_dept_name` VARCHAR(64) DEFAULT NULL COMMENT '当前所属病区名称（冗余快照）',
+    -- 层级关联字段：病区 -> 房间 -> 床位
+                                `ward_id` BIGINT DEFAULT NULL COMMENT '所属病区ID，关联sys_ward',
+                                `bed_id` BIGINT DEFAULT NULL COMMENT '入住床位ID，关联sys_bed床位表',
+                                `device_id` BIGINT NOT NULL COMMENT '采集设备ID（业务关联，无外键约束）',
                                 `phone` VARCHAR(16) DEFAULT NULL COMMENT '联系电话（脱敏存储）',
                                 `admission_time` DATETIME DEFAULT NULL COMMENT '入院时间',
                                 `discharge_time` DATETIME DEFAULT NULL COMMENT '出院时间',
@@ -187,11 +265,13 @@ CREATE TABLE `patient_info` (
                                 UNIQUE INDEX `idx_id_card` (`id_card`),
                                 INDEX `idx_inpatient_no` (`inpatient_no`),
                                 INDEX `idx_patient_name` (`patient_name`),
-                                INDEX `idx_current_dept_id` (`current_dept_id`),
+                                INDEX `idx_ward_id` (`ward_id`),
+                                INDEX `idx_bed_id` (`bed_id`),
                                 INDEX `idx_risk_level` (`risk_level`),
-                                INDEX `idx_patient_status` (`patient_status`),
-                                INDEX `idx_composite_filter` (`current_dept_name`, `risk_level`, `patient_status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='患者信息主表：存储患者全生命周期档案信息，是系统核心基础表；冗余心电采集次数、最近时间等字段，单表即可完成患者管理列表的全量渲染与筛选，无需跨表联查；无物理外键约束。';
+                                INDEX `idx_patient_status` (`patient_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='患者信息主表：存储患者全生命周期档案信息；仅关联病区ID与床位ID，通过床位关联房间、病区，严格遵循层级架构设计，消除冗余字段';
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- 业务逻辑说明：
 -- 1. 关联逻辑：通过current_dept_id与科室表业务关联，无物理外键，关联一致性由业务层校验。
