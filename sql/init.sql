@@ -23,7 +23,6 @@ COMMENT '心电图情报分析系统：支撑心电数据采集、AI诊断、报
 
 USE `ecg_intelligence_analysis_system`;
 
-
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
