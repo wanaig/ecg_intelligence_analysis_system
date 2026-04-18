@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.system.SystemUserMapper">
+
+    <select id="selectUserPage" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemUserPageItemVo">
+        SELECT
+            u.user_id AS userId,
+            u.user_name AS userName,
+            u.real_name AS realName,
+            u.role_id AS roleId,
+            u.role_name AS roleName,
+            u.dept_id AS deptId,
+            u.dept_name AS deptName,
+            u.phone AS phone,
+            u.email AS email,
+            u.status AS status,
+            CASE u.status
+                WHEN 1 THEN '启用'
+                WHEN 0 THEN '禁用'
+                ELSE '未知'
+            END AS statusText,
+            u.last_login_time AS lastLoginTime,
+            u.create_time AS createTime
+        FROM sys_user u
+        WHERE u.is_deleted = 0
+        <if test="req != null and req.keyword != null and req.keyword != ''">
+            AND (
+                u.user_name LIKE CONCAT('%', #{req.keyword}, '%')
+                OR u.real_name LIKE CONCAT('%', #{req.keyword}, '%')
+                OR u.phone LIKE CONCAT('%', #{req.keyword}, '%')
+            )
+        </if>
+        <if test="req != null and req.roleId != null">
+            AND u.role_id = #{req.roleId}
+        </if>
+        <if test="req != null and req.deptId != null">
+            AND u.dept_id = #{req.deptId}
+        </if>
+        <if test="statusCode != null">
+            AND u.status = #{statusCode}
+        </if>
+        ORDER BY u.update_time DESC, u.user_id DESC
+    </select>
+
+    <select id="selectRoleOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+        SELECT
+            CAST(r.role_id AS CHAR) AS value,
+            r.role_name AS label
+        FROM sys_role r
+        WHERE r.is_deleted = 0
+          AND r.status = 1
+        ORDER BY r.role_id ASC
+    </select>
+
+    <select id="selectDepartmentOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+        SELECT
+            CAST(d.dept_id AS CHAR) AS value,
+            d.dept_name AS label
+        FROM sys_department d
+        WHERE d.is_deleted = 0
+          AND d.status = 1
+        ORDER BY d.sort ASC, d.dept_id ASC
+    </select>
+
+    <select id="countUserName" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_user u
+        WHERE u.user_name = #{userName}
+          AND u.is_deleted = 0
+        <if test="excludeUserId != null">
+            AND u.user_id != #{excludeUserId}
+        </if>
+    </select>
+
+    <select id="selectRoleNameById" resultType="java.lang.String">
+        SELECT r.role_name
+        FROM sys_role r
+        WHERE r.role_id = #{roleId}
+          AND r.is_deleted = 0
+          AND r.status = 1
+        LIMIT 1
+    </select>
+
+    <select id="selectDeptNameById" resultType="java.lang.String">
+        SELECT d.dept_name
+        FROM sys_department d
+        WHERE d.dept_id = #{deptId}
+          AND d.is_deleted = 0
+          AND d.status = 1
+        LIMIT 1
+    </select>
+
+    <insert id="insertUser" parameterType="com.hnkjzy.ecg_collection.model.entity.system.SysUserEntity">
+        INSERT INTO sys_user (
+            user_id,
+            user_name,
+            real_name,
+            password,
+            role_id,
+            role_name,
+            dept_id,
+            dept_name,
+            phone,
+            email,
+            status,
+            create_user_id,
+            is_deleted
+        ) VALUES (
+            #{userId},
+            #{userName},
+            #{realName},
+            #{password},
+            #{roleId},
+            #{roleName},
+            #{deptId},
+            #{deptName},
+            #{phone},
+            #{email},
+            #{status},
+            #{createUserId},
+            #{isDeleted}
+        )
+    </insert>
+
+    <update id="updateUserById" parameterType="com.hnkjzy.ecg_collection.model.entity.system.SysUserEntity">
+        UPDATE sys_user
+        SET
+            user_name = #{userName},
+            real_name = #{realName},
+            role_id = #{roleId},
+            role_name = #{roleName},
+            dept_id = #{deptId},
+            dept_name = #{deptName},
+            phone = #{phone},
+            email = #{email},
+            status = #{status},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="selectUserSaveResult" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemUserSaveResultVo">
+        SELECT
+            u.user_id AS userId,
+            u.user_name AS userName,
+            u.real_name AS realName,
+            u.role_id AS roleId,
+            u.role_name AS roleName,
+            u.dept_id AS deptId,
+            u.dept_name AS deptName,
+            u.phone AS phone,
+            u.email AS email,
+            u.status AS status,
+            CASE u.status
+                WHEN 1 THEN '启用'
+                WHEN 0 THEN '禁用'
+                ELSE '未知'
+            END AS statusText
+        FROM sys_user u
+        WHERE u.user_id = #{userId}
+          AND u.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectUserDetail" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemUserDetailVo">
+        SELECT
+            u.user_id AS userId,
+            u.user_name AS userName,
+            u.real_name AS realName,
+            u.role_id AS roleId,
+            u.role_name AS roleName,
+            u.dept_id AS deptId,
+            u.dept_name AS deptName,
+            u.phone AS phone,
+            u.email AS email,
+            u.status AS status,
+            CASE u.status
+                WHEN 1 THEN '启用'
+                WHEN 0 THEN '禁用'
+                ELSE '未知'
+            END AS statusText,
+            u.last_login_time AS lastLoginTime,
+            u.create_time AS createTime,
+            u.update_time AS updateTime,
+            u.create_user_id AS createUserId
+        FROM sys_user u
+        WHERE u.user_id = #{userId}
+          AND u.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <update id="logicalDeleteUser">
+        UPDATE sys_user
+        SET is_deleted = 1,
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="selectOperatorById" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemUserOperatorVo">
+        SELECT
+            u.user_id AS userId,
+            u.user_name AS userName,
+            u.real_name AS realName,
+            u.role_id AS roleId,
+            u.status AS status
+        FROM sys_user u
+        WHERE u.user_id = #{userId}
+          AND u.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectOperatorByUserName" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemUserOperatorVo">
+        SELECT
+            u.user_id AS userId,
+            u.user_name AS userName,
+            u.real_name AS realName,
+            u.role_id AS roleId,
+            u.status AS status
+        FROM sys_user u
+        WHERE u.user_name = #{userName}
+          AND u.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="countRolePermission" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_role_permission rp
+        WHERE rp.role_id = #{roleId}
+          AND rp.is_deleted = 0
+          AND rp.permission_code IN
+        <foreach collection="permissionCodes" item="permissionCode" open="(" separator="," close=")">
+            #{permissionCode}
+        </foreach>
+    </select>
+
+    <update id="updateUserPassword">
+        UPDATE sys_user
+        SET password = #{encodedPassword},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+    </update>
+
+    <insert id="insertOperationLog" parameterType="com.hnkjzy.ecg_collection.model.entity.system.SysOperationLogEntity">
+        INSERT INTO sys_operation_log (
+            log_id,
+            user_id,
+            real_name,
+            module,
+            operation_type,
+            operation_content,
+            request_ip,
+            operation_time,
+            is_deleted
+        ) VALUES (
+            #{logId},
+            #{userId},
+            #{realName},
+            #{module},
+            #{operationType},
+            #{operationContent},
+            #{requestIp},
+            #{operationTime},
+            #{isDeleted}
+        )
+    </insert>
+</mapper>

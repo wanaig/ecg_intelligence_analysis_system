@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.monitor.MonitorDeviceMapper">
+
+    <select id="selectDevicePage" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorDevicePageItemVo">
+        SELECT
+            d.device_id AS deviceId,
+            d.device_code AS deviceCode,
+            d.device_name AS deviceName,
+            d.device_type AS deviceType,
+            CASE d.device_type
+                WHEN 1 THEN '静态心电设备'
+                WHEN 2 THEN '动态心电设备'
+                WHEN 3 THEN '居家监护设备'
+                WHEN 4 THEN '床边监护仪'
+                ELSE '未知'
+            END AS deviceTypeText,
+            d.device_model AS deviceModel,
+            d.manufacturer AS manufacturer,
+            d.supplier AS supplier,
+            d.install_date AS installDate,
+            d.bind_dept_id AS wardId,
+            d.bind_dept_name AS wardName,
+            d.device_status AS deviceStatus,
+            CASE d.device_status
+                WHEN 1 THEN '正常'
+                WHEN 2 THEN '维修'
+                WHEN 3 THEN '停用'
+                WHEN 4 THEN '离线'
+                ELSE '未知'
+            END AS deviceStatusText,
+            d.last_maintain_time AS lastMaintainTime,
+            d.next_maintain_time AS nextMaintainTime
+        FROM ecg_device d
+        WHERE d.is_deleted = 0
+        <if test="req != null and req.deviceName != null and req.deviceName != ''">
+            AND (
+                d.device_name LIKE CONCAT('%', #{req.deviceName}, '%')
+                OR d.device_code LIKE CONCAT('%', #{req.deviceName}, '%')
+            )
+        </if>
+        <if test="deviceTypeCode != null">
+            AND d.device_type = #{deviceTypeCode}
+        </if>
+        <if test="req != null and req.ward != null and req.ward != ''">
+            AND (
+                d.bind_dept_name = #{req.ward}
+                OR CAST(d.bind_dept_id AS CHAR) = #{req.ward}
+            )
+        </if>
+        <if test="purchaseStart != null">
+            AND d.install_date <![CDATA[>=]]> #{purchaseStart}
+        </if>
+        <if test="purchaseEnd != null">
+            AND d.install_date <![CDATA[<=]]> #{purchaseEnd}
+        </if>
+        ORDER BY d.update_time DESC, d.device_id DESC
+    </select>
+
+    <select id="selectWardOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+        SELECT
+            CAST(w.ward_id AS CHAR) AS value,
+            w.ward_name AS label
+        FROM sys_ward w
+        WHERE w.is_deleted = 0
+          AND w.status = 1
+        ORDER BY w.sort_num ASC, w.ward_id ASC
+    </select>
+
+    <select id="selectWardNameById" resultType="java.lang.String">
+        SELECT w.ward_name
+        FROM sys_ward w
+        WHERE w.ward_id = #{wardId}
+          AND w.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="countDeviceCode" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ecg_device d
+        WHERE d.device_code = #{deviceCode}
+        <if test="excludeDeviceId != null">
+            AND d.device_id != #{excludeDeviceId}
+        </if>
+    </select>
+
+    <insert id="insertDevice" parameterType="com.hnkjzy.ecg_collection.model.entity.monitor.EcgDeviceEntity">
+        INSERT INTO ecg_device (
+            device_id,
+            device_code,
+            device_name,
+            device_type,
+            device_model,
+            manufacturer,
+            supplier,
+            install_date,
+            bind_dept_id,
+            bind_dept_name,
+            last_maintain_time,
+            next_maintain_time,
+            device_status,
+            is_deleted
+        ) VALUES (
+            #{deviceId},
+            #{deviceCode},
+            #{deviceName},
+            #{deviceType},
+            #{deviceModel},
+            #{manufacturer},
+            #{supplier},
+            #{installDate},
+            #{bindDeptId},
+            #{bindDeptName},
+            #{lastMaintainTime},
+            #{nextMaintainTime},
+            #{deviceStatus},
+            #{isDeleted}
+        )
+    </insert>
+
+    <update id="updateDeviceById" parameterType="com.hnkjzy.ecg_collection.model.entity.monitor.EcgDeviceEntity">
+        UPDATE ecg_device
+        SET
+            device_code = #{deviceCode},
+            device_name = #{deviceName},
+            device_type = #{deviceType},
+            device_model = #{deviceModel},
+            manufacturer = #{manufacturer},
+            supplier = #{supplier},
+            install_date = #{installDate},
+            bind_dept_id = #{bindDeptId},
+            bind_dept_name = #{bindDeptName},
+            last_maintain_time = #{lastMaintainTime},
+            next_maintain_time = #{nextMaintainTime},
+            device_status = #{deviceStatus},
+            update_time = NOW()
+        WHERE device_id = #{deviceId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="selectDeviceSaveResult" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorDeviceSaveResultVo">
+        SELECT
+            d.device_id AS deviceId,
+            d.device_code AS deviceCode,
+            d.device_name AS deviceName,
+            d.device_type AS deviceType,
+            CASE d.device_type
+                WHEN 1 THEN '静态心电设备'
+                WHEN 2 THEN '动态心电设备'
+                WHEN 3 THEN '居家监护设备'
+                WHEN 4 THEN '床边监护仪'
+                ELSE '未知'
+            END AS deviceTypeText,
+            d.device_model AS deviceModel,
+            d.manufacturer AS manufacturer,
+            d.supplier AS supplier,
+            d.install_date AS installDate,
+            d.bind_dept_id AS wardId,
+            d.bind_dept_name AS wardName,
+            d.device_status AS deviceStatus,
+            CASE d.device_status
+                WHEN 1 THEN '正常'
+                WHEN 2 THEN '维修'
+                WHEN 3 THEN '停用'
+                WHEN 4 THEN '离线'
+                ELSE '未知'
+            END AS deviceStatusText,
+            d.last_maintain_time AS lastMaintainTime,
+            d.next_maintain_time AS nextMaintainTime
+        FROM ecg_device d
+        WHERE d.device_id = #{deviceId}
+          AND d.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="countActiveMonitorBinding" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM ecg_real_time_monitor m
+        WHERE m.device_id = #{deviceId}
+          AND m.is_deleted = 0
+    </select>
+
+    <update id="logicalDeleteDevice">
+        UPDATE ecg_device
+        SET is_deleted = 1,
+            update_time = NOW()
+        WHERE device_id = #{deviceId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="selectDeviceBasicInfo" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorDeviceBasicInfoVo">
+        SELECT
+            d.device_id AS deviceId,
+            d.device_code AS deviceCode,
+            d.device_name AS deviceName,
+            d.device_type AS deviceType,
+            CASE d.device_type
+                WHEN 1 THEN '静态心电设备'
+                WHEN 2 THEN '动态心电设备'
+                WHEN 3 THEN '居家监护设备'
+                WHEN 4 THEN '床边监护仪'
+                ELSE '未知'
+            END AS deviceTypeText,
+            d.device_model AS deviceModel,
+            d.manufacturer AS manufacturer,
+            d.device_status AS deviceStatus,
+            CASE d.device_status
+                WHEN 1 THEN '正常'
+                WHEN 2 THEN '维修'
+                WHEN 3 THEN '停用'
+                WHEN 4 THEN '离线'
+                ELSE '未知'
+            END AS deviceStatusText,
+            d.bind_dept_id AS wardId,
+            d.bind_dept_name AS wardName,
+            d.install_date AS installDate
+        FROM ecg_device d
+        WHERE d.device_id = #{deviceId}
+          AND d.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectDeviceUsageStat" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorDeviceUsageStatVo">
+        SELECT
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c1
+                WHERE c1.device_id = #{deviceId}
+                  AND c1.is_deleted = 0
+                  AND c1.collection_start_time <![CDATA[>=]]> CURDATE()
+                  AND c1.collection_start_time <![CDATA[<]]> DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+            ) AS todayMeasureCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c2
+                WHERE c2.device_id = #{deviceId}
+                  AND c2.is_deleted = 0
+                  AND YEARWEEK(c2.collection_start_time, 1) = YEARWEEK(CURDATE(), 1)
+            ) AS weekMeasureCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c3
+                WHERE c3.device_id = #{deviceId}
+                  AND c3.is_deleted = 0
+                  AND DATE_FORMAT(c3.collection_start_time, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+            ) AS monthMeasureCount,
+            (
+                SELECT
+                    IFNULL(
+                        ROUND(
+                            (SUM(CASE WHEN m.monitor_status IN (1, 2) THEN 1 ELSE 0 END) / NULLIF(COUNT(1), 0)) * 100,
+                            2
+                        ),
+                        0
+                    )
+                FROM ecg_real_time_monitor m
+                WHERE m.device_id = #{deviceId}
+                  AND m.is_deleted = 0
+            ) AS onlineRate,
+            (
+                SELECT
+                    IFNULL(
+                        ROUND(
+                            (SUM(CASE WHEN c4.ai_analysis_status = 3 THEN 1 ELSE 0 END) / NULLIF(COUNT(1), 0)) * 100,
+                            2
+                        ),
+                        0
+                    )
+                FROM ecg_collection_record c4
+                WHERE c4.device_id = #{deviceId}
+                  AND c4.is_deleted = 0
+            ) AS errorRate
+    </select>
+
+    <select id="selectDeviceDeptTags" resultType="java.lang.String">
+        SELECT DISTINCT t.dept_name
+        FROM (
+                 SELECT d.bind_dept_name AS dept_name
+                 FROM ecg_device d
+                 WHERE d.device_id = #{deviceId}
+                   AND d.is_deleted = 0
+
+                 UNION ALL
+
+                 SELECT c.dept_name AS dept_name
+                 FROM ecg_collection_record c
+                 WHERE c.device_id = #{deviceId}
+                   AND c.is_deleted = 0
+
+                 UNION ALL
+
+                 SELECT m.dept_name AS dept_name
+                 FROM ecg_real_time_monitor m
+                 WHERE m.device_id = #{deviceId}
+                   AND m.is_deleted = 0
+             ) t
+        WHERE t.dept_name IS NOT NULL
+          AND t.dept_name != ''
+        ORDER BY t.dept_name ASC
+    </select>
+
+    <select id="selectCurrentPatients" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorDeviceCurrentPatientVo">
+        SELECT
+            m.patient_id AS patientId,
+            m.patient_name AS patientName,
+            p.inpatient_no AS inpatientNo,
+            CONCAT(COALESCE(m.dept_name, '未知病区'), ' | ', COALESCE(m.bed_no, '--')) AS wardBed,
+            m.current_heart_rate AS heartRate,
+            CASE m.monitor_status
+                WHEN 1 THEN '正常'
+                WHEN 2 THEN '预警'
+                WHEN 3 THEN '离线'
+                ELSE '未知'
+            END AS monitorStatus,
+            m.latest_update_time AS updateTime
+        FROM ecg_real_time_monitor m
+                 LEFT JOIN patient_info p ON m.patient_id = p.patient_id AND p.is_deleted = 0
+        WHERE m.device_id = #{deviceId}
+          AND m.is_deleted = 0
+        ORDER BY m.latest_update_time DESC, m.monitor_id DESC
+    </select>
+
+    <select id="selectMaintainRecordPage" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorDeviceMaintainRecordVo">
+        SELECT
+            r.maintain_id AS maintainId,
+            r.maintain_type AS maintainType,
+            r.maintain_user_name AS maintainUserName,
+            r.maintain_time AS maintainTime,
+            r.maintain_content AS maintainContent,
+            r.maintain_result AS maintainResult,
+            r.next_maintain_time AS nextMaintainTime
+        FROM ecg_device_maintain_record r
+        WHERE r.device_id = #{deviceId}
+          AND r.is_deleted = 0
+        ORDER BY r.maintain_time DESC, r.maintain_id DESC
+    </select>
+</mapper>

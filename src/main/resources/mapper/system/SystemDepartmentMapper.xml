@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.system.SystemDepartmentMapper">
+
+    <sql id="departmentSelectColumns">
+        d.dept_id AS deptId,
+        d.dept_name AS deptName,
+        d.parent_id AS parentDeptId,
+        d.parent_name AS parentDeptName,
+        d.dept_type AS deptLevel,
+        CASE d.dept_type
+            WHEN 1 THEN '科室'
+            WHEN 2 THEN '病区'
+            WHEN 3 THEN '居家站点'
+            ELSE '未知'
+        END AS deptLevelText,
+        (
+            SELECT su.real_name
+            FROM sys_user su
+            WHERE su.dept_id = d.dept_id
+              AND su.is_deleted = 0
+              AND su.role_name LIKE '%主任%'
+            ORDER BY su.user_id ASC
+            LIMIT 1
+        ) AS deptDirector,
+        (
+            SELECT su.phone
+            FROM sys_user su
+            WHERE su.dept_id = d.dept_id
+              AND su.is_deleted = 0
+              AND su.role_name LIKE '%主任%'
+            ORDER BY su.user_id ASC
+            LIMIT 1
+        ) AS contactPhone,
+        CASE
+            WHEN INSTR(d.dept_code, '|') > 0 THEN SUBSTRING(d.dept_code, INSTR(d.dept_code, '|') + 1)
+            ELSE NULL
+        END AS location,
+        d.status AS status,
+        CASE d.status
+            WHEN 1 THEN '启用'
+            WHEN 0 THEN '禁用'
+            ELSE '未知'
+        END AS statusText,
+        d.create_time AS createTime,
+        d.update_time AS updateTime
+    </sql>
+
+    <select id="selectDepartmentPage" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemDepartmentPageItemVo">
+        SELECT
+            <include refid="departmentSelectColumns"/>
+        FROM sys_department d
+        WHERE d.is_deleted = 0
+        <if test="req != null and req.keyword != null and req.keyword != ''">
+            AND d.dept_name LIKE CONCAT('%', #{req.keyword}, '%')
+        </if>
+        <if test="req != null and req.parentDeptId != null">
+            AND d.parent_id = #{req.parentDeptId}
+        </if>
+        <if test="statusCode != null">
+            AND d.status = #{statusCode}
+        </if>
+        ORDER BY d.sort ASC, d.dept_id ASC
+    </select>
+
+    <select id="selectDepartmentTreeList" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemDepartmentTreeItemVo">
+        SELECT
+            d.dept_id AS deptId,
+            d.parent_id AS parentDeptId,
+            d.dept_name AS deptName
+        FROM sys_department d
+        WHERE d.is_deleted = 0
+          AND d.status = 1
+        ORDER BY d.sort ASC, d.dept_id ASC
+    </select>
+
+    <select id="countDepartmentName" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_department d
+        WHERE d.dept_name = #{deptName}
+          AND d.is_deleted = 0
+        <if test="parentDeptId == null">
+            AND d.parent_id IS NULL
+        </if>
+        <if test="parentDeptId != null">
+            AND d.parent_id = #{parentDeptId}
+        </if>
+        <if test="excludeDeptId != null">
+            AND d.dept_id != #{excludeDeptId}
+        </if>
+    </select>
+
+    <select id="selectDepartmentNameById" resultType="java.lang.String">
+        SELECT d.dept_name
+        FROM sys_department d
+        WHERE d.dept_id = #{deptId}
+          AND d.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectDepartmentCodeById" resultType="java.lang.String">
+        SELECT d.dept_code
+        FROM sys_department d
+        WHERE d.dept_id = #{deptId}
+          AND d.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectMaxSortByParent" resultType="java.lang.Long">
+        SELECT MAX(d.sort)
+        FROM sys_department d
+        WHERE d.is_deleted = 0
+        <if test="parentDeptId == null">
+            AND d.parent_id IS NULL
+        </if>
+        <if test="parentDeptId != null">
+            AND d.parent_id = #{parentDeptId}
+        </if>
+    </select>
+
+    <insert id="insertDepartment" parameterType="com.hnkjzy.ecg_collection.model.entity.system.SysDepartmentEntity">
+        INSERT INTO sys_department (
+            dept_id,
+            parent_id,
+            parent_name,
+            dept_name,
+            dept_code,
+            dept_type,
+            sort,
+            status,
+            is_deleted
+        ) VALUES (
+            #{deptId},
+            #{parentId},
+            #{parentName},
+            #{deptName},
+            #{deptCode},
+            #{deptType},
+            #{sort},
+            #{status},
+            #{isDeleted}
+        )
+    </insert>
+
+    <update id="updateDepartmentById" parameterType="com.hnkjzy.ecg_collection.model.entity.system.SysDepartmentEntity">
+        UPDATE sys_department
+        SET
+            parent_id = #{parentId},
+            parent_name = #{parentName},
+            dept_name = #{deptName},
+            dept_code = #{deptCode},
+            dept_type = #{deptType},
+            status = #{status},
+            update_time = NOW()
+        WHERE dept_id = #{deptId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="selectDepartmentDetail" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemDepartmentDetailVo">
+        SELECT
+            <include refid="departmentSelectColumns"/>
+        FROM sys_department d
+        WHERE d.dept_id = #{deptId}
+          AND d.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectDepartmentSaveResult" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemDepartmentSaveResultVo">
+        SELECT
+            <include refid="departmentSelectColumns"/>
+        FROM sys_department d
+        WHERE d.dept_id = #{deptId}
+          AND d.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="countChildDepartments" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_department d
+        WHERE d.parent_id = #{deptId}
+          AND d.is_deleted = 0
+    </select>
+
+    <select id="countUsersByDepartmentId" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_user u
+        WHERE u.dept_id = #{deptId}
+          AND u.is_deleted = 0
+    </select>
+
+    <select id="countDevicesByDepartmentId" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ecg_device ed
+        WHERE ed.bind_dept_id = #{deptId}
+          AND ed.is_deleted = 0
+    </select>
+
+    <update id="logicalDeleteDepartment">
+        UPDATE sys_department
+        SET is_deleted = 1,
+            update_time = NOW()
+        WHERE dept_id = #{deptId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateDirectorUserByDeptId">
+        UPDATE sys_user
+        SET
+            real_name = CASE
+                WHEN #{deptDirector} IS NULL OR #{deptDirector} = '' THEN real_name
+                ELSE #{deptDirector}
+            END,
+            phone = CASE
+                WHEN #{contactPhone} IS NULL OR #{contactPhone} = '' THEN phone
+                ELSE #{contactPhone}
+            END,
+            update_time = NOW()
+        WHERE dept_id = #{deptId}
+          AND is_deleted = 0
+          AND role_name LIKE '%主任%'
+        ORDER BY user_id ASC
+        LIMIT 1
+    </update>
+
+</mapper>

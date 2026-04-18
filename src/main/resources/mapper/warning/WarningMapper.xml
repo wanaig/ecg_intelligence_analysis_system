@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.warning.WarningMapper">
+
+    <select id="selectGlobalStat" resultType="com.hnkjzy.ecg_collection.model.vo.warning.WarningGlobalStatVo">
+        SELECT
+            COALESCE(SUM(CASE WHEN w.warning_level = 3 THEN 1 ELSE 0 END), 0) AS highRiskCount,
+            COALESCE(SUM(CASE WHEN w.handle_status IN (0, 1, 2) THEN 1 ELSE 0 END), 0) AS pendingHandleCount
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+    </select>
+
+    <select id="selectWarningPage" resultType="com.hnkjzy.ecg_collection.model.vo.warning.WarningPageItemVo">
+        SELECT
+            w.warning_id AS alertId,
+            w.warning_time AS warningTime,
+            w.patient_name AS patientName,
+            CASE
+                WHEN w.gender IS NOT NULL AND w.gender != '' THEN w.gender
+                WHEN p.gender = 1 THEN '男'
+                WHEN p.gender = 2 THEN '女'
+                ELSE '未知'
+            END AS genderText,
+            COALESCE(w.age, p.age) AS age,
+            CONCAT(
+                w.patient_name,
+                ' / ',
+                CASE
+                    WHEN w.gender IS NOT NULL AND w.gender != '' THEN w.gender
+                    WHEN p.gender = 1 THEN '男'
+                    WHEN p.gender = 2 THEN '女'
+                    ELSE '未知'
+                END,
+                ' / ',
+                COALESCE(COALESCE(w.age, p.age), 0),
+                '岁'
+            ) AS patientInfo,
+            w.inpatient_no AS inpatientNo,
+            w.dept_name AS wardName,
+            w.warning_type AS warningType,
+            w.warning_level AS alertLevel,
+            CASE w.warning_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS alertLevelText,
+            w.handle_status AS alertStatus,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS alertStatusText,
+            w.handle_time AS handleTime
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+        WHERE w.is_deleted = 0
+        <if test="req != null and req.keyword != null and req.keyword != ''">
+            AND (
+                w.patient_name LIKE CONCAT('%', #{req.keyword}, '%')
+                OR w.inpatient_no LIKE CONCAT('%', #{req.keyword}, '%')
+            )
+        </if>
+        <if test="req != null and req.ward != null and req.ward != ''">
+            AND (
+                w.dept_name = #{req.ward}
+                OR CAST(w.dept_id AS CHAR) = #{req.ward}
+            )
+        </if>
+        <if test="alertLevelCode != null">
+            AND w.warning_level = #{alertLevelCode}
+        </if>
+        <if test="alertStatusCode != null">
+            AND w.handle_status = #{alertStatusCode}
+        </if>
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<=]]> #{endTime}
+        </if>
+        ORDER BY w.warning_time DESC, w.warning_id DESC
+    </select>
+
+    <select id="selectWarningDetail" resultType="com.hnkjzy.ecg_collection.model.vo.warning.WarningDetailVo">
+        SELECT
+            w.warning_id AS alertId,
+            w.warning_time AS warningTime,
+            w.warning_level AS alertLevel,
+            CASE w.warning_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS alertLevelText,
+            w.handle_status AS alertStatus,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS alertStatusText,
+            w.patient_name AS patientName,
+            COALESCE(w.age, p.age) AS age,
+            CASE
+                WHEN w.gender IS NOT NULL AND w.gender != '' THEN w.gender
+                WHEN p.gender = 1 THEN '男'
+                WHEN p.gender = 2 THEN '女'
+                ELSE '未知'
+            END AS genderText,
+            w.inpatient_no AS inpatientNo,
+            w.dept_name AS wardName,
+            w.warning_type AS warningType,
+            w.warning_desc AS warningDesc,
+            a.ai_conclusion AS aiConclusion,
+            COALESCE(p.primary_diagnosis, '暂无临床表现记录') AS clinicalManifestation,
+            CASE w.warning_level
+                WHEN 3 THEN '建议关联检查：肌钙蛋白、CK-MB、电解质、D-二聚体'
+                WHEN 2 THEN '建议关联检查：心肌酶谱、电解质、BNP'
+                ELSE '建议结合常规检验结果进行综合评估'
+            END AS lisHint,
+            w.handle_user_name AS handleUserName,
+            w.handle_time AS handleTime,
+            w.handle_opinion AS handleRemark
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN ecg_ai_diagnosis a ON w.ai_diagnosis_id = a.ai_diagnosis_id AND a.is_deleted = 0
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+        WHERE w.warning_id = #{alertId}
+          AND w.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <update id="updateHandleWarning">
+        UPDATE ecg_abnormal_warning
+        SET
+            handle_status = 3,
+            handle_user_name = #{handleUserName},
+            handle_time = NOW(),
+            handle_opinion = #{handleRemark},
+            update_time = NOW()
+        WHERE warning_id = #{alertId}
+          AND is_deleted = 0
+    </update>
+</mapper>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.monitor.MonitorQualityControlMapper">
+
+    <select id="selectQualityControlPage" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlPageItemVo">
+        SELECT
+            q.qc_id AS qcId,
+            q.device_id AS deviceId,
+            q.device_name AS deviceName,
+            q.dept_id AS deptId,
+            q.dept_name AS deptName,
+            q.test_time AS testTime,
+            q.test_type AS testType,
+            q.test_user_id AS testUserId,
+            q.test_user_name AS testUserName,
+            q.device_status AS deviceStatus,
+            q.test_result AS testResult,
+            q.remark AS remark,
+            q.create_time AS createTime,
+            q.update_time AS updateTime
+        FROM ecg_device_quality_control q
+        WHERE q.is_deleted = 0
+        <if test="req != null and req.deviceId != null">
+            AND q.device_id = #{req.deviceId}
+        </if>
+        <if test="statusText != null and statusText != ''">
+            AND q.test_result = #{statusText}
+        </if>
+        <if test="startTime != null">
+            AND q.test_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND q.test_time <![CDATA[<=]]> #{endTime}
+        </if>
+        ORDER BY q.test_time DESC, q.qc_id DESC
+    </select>
+
+    <select id="selectDeviceOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+        SELECT
+            CAST(d.device_id AS CHAR) AS value,
+            CONCAT(d.device_name, ' (', COALESCE(d.device_code, '-'), ')') AS label
+        FROM ecg_device d
+        WHERE d.is_deleted = 0
+        ORDER BY d.update_time DESC, d.device_id DESC
+    </select>
+
+    <select id="selectDeviceInfoById" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeviceInfoVo">
+        SELECT
+            d.device_id AS deviceId,
+            d.device_name AS deviceName,
+            d.bind_dept_id AS deptId,
+            d.bind_dept_name AS deptName
+        FROM ecg_device d
+        WHERE d.device_id = #{deviceId}
+          AND d.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectUserNameById" resultType="java.lang.String">
+        SELECT COALESCE(NULLIF(u.real_name, ''), u.user_name)
+        FROM sys_user u
+        WHERE u.user_id = #{userId}
+          AND u.is_deleted = 0
+          AND u.status = 1
+        LIMIT 1
+    </select>
+
+    <insert id="insertQualityControl" parameterType="com.hnkjzy.ecg_collection.model.entity.monitor.EcgDeviceQualityControlEntity">
+        INSERT INTO ecg_device_quality_control (
+            qc_id,
+            device_id,
+            device_name,
+            dept_id,
+            dept_name,
+            test_time,
+            test_type,
+            test_user_id,
+            test_user_name,
+            device_status,
+            test_result,
+            remark,
+            is_deleted
+        ) VALUES (
+            #{qcId},
+            #{deviceId},
+            #{deviceName},
+            #{deptId},
+            #{deptName},
+            #{testTime},
+            #{testType},
+            #{testUserId},
+            #{testUserName},
+            #{deviceStatus},
+            #{testResult},
+            #{remark},
+            #{isDeleted}
+        )
+    </insert>
+
+    <update id="updateQualityControlById" parameterType="com.hnkjzy.ecg_collection.model.entity.monitor.EcgDeviceQualityControlEntity">
+        UPDATE ecg_device_quality_control
+        SET
+            device_id = #{deviceId},
+            device_name = #{deviceName},
+            dept_id = #{deptId},
+            dept_name = #{deptName},
+            test_time = #{testTime},
+            test_type = #{testType},
+            test_user_id = #{testUserId},
+            test_user_name = #{testUserName},
+            device_status = #{deviceStatus},
+            test_result = #{testResult},
+            remark = #{remark},
+            update_time = NOW()
+        WHERE qc_id = #{qcId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="selectQualityControlDetail" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDetailVo">
+        SELECT
+            q.qc_id AS qcId,
+            q.device_id AS deviceId,
+            q.device_name AS deviceName,
+            q.dept_id AS deptId,
+            q.dept_name AS deptName,
+            q.test_time AS testTime,
+            q.test_type AS testType,
+            q.test_user_id AS testUserId,
+            q.test_user_name AS testUserName,
+            q.device_status AS deviceStatus,
+            q.test_result AS testResult,
+            q.remark AS remark,
+            q.create_time AS createTime,
+            q.update_time AS updateTime
+        FROM ecg_device_quality_control q
+        WHERE q.qc_id = #{qcId}
+          AND q.is_deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>

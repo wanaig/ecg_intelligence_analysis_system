@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.monitor.MonitorMapper">
+
+    <select id="selectGlobalStat" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorGlobalStatVo">
+        SELECT
+            COALESCE(SUM(CASE
+                             WHEN c.collection_start_time <![CDATA[>=]]> CURDATE()
+                                 AND c.collection_start_time <![CDATA[<]]> DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+                                 THEN 1
+                             ELSE 0
+                END), 0) AS todayCollect,
+            COALESCE(SUM(CASE
+                             WHEN c.ai_analysis_status IN (0, 1) THEN 1
+                             ELSE 0
+                END), 0) AS pendingAnalyse,
+            (
+                SELECT COALESCE(COUNT(1), 0)
+                FROM ecg_diagnosis_report r
+                WHERE r.is_deleted = 0
+                  AND r.report_status = 1
+            ) AS pendingAudit,
+            (
+                SELECT COALESCE(COUNT(1), 0)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+            ) AS alertTotal
+        FROM ecg_collection_record c
+        WHERE c.is_deleted = 0
+    </select>
+
+    <select id="selectRealtimePatients" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorPatientCardVo">
+        SELECT
+            m.patient_id AS patientId,
+            m.patient_name AS patientName,
+            CONCAT(COALESCE(m.dept_name, '未知病区'), ' | ', COALESCE(m.bed_no, '--')) AS wardBed,
+            m.current_heart_rate AS heartRate,
+            CASE m.monitor_status
+                WHEN 1 THEN '正常'
+                WHEN 2 THEN '预警'
+                WHEN 3 THEN '离线'
+                ELSE '未知'
+            END AS monitorStatus,
+            DATE_FORMAT(m.latest_update_time, '%H:%i:%s') AS updateTime
+        FROM ecg_real_time_monitor m
+        WHERE m.is_deleted = 0
+        ORDER BY CASE m.monitor_status
+                     WHEN 2 THEN 1
+                     WHEN 3 THEN 2
+                     ELSE 3
+                 END,
+                 m.latest_update_time DESC,
+                 m.monitor_id DESC
+    </select>
+
+    <select id="selectWardDistribution" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorWardDistributionItemVo">
+        SELECT
+            COALESCE(m.dept_name, '未知病区') AS wardName,
+            COUNT(1) AS patientCount
+        FROM ecg_real_time_monitor m
+        WHERE m.is_deleted = 0
+        GROUP BY m.dept_name
+        ORDER BY patientCount DESC, wardName ASC
+    </select>
+
+    <select id="selectAiAccuracyRate" resultType="java.math.BigDecimal">
+        SELECT s.stat_value4
+        FROM ecg_statistics_result s
+        WHERE s.stat_type = 4
+        ORDER BY s.stat_date DESC, s.stat_id DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectMonitorPatientBase" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorPatientDetailVo">
+        SELECT
+            m.patient_id AS patientId,
+            m.patient_name AS patientName,
+            p.inpatient_no AS inpatientNo,
+            COALESCE(w.ward_name, m.dept_name) AS wardName,
+            COALESCE(m.bed_no, b.bed_no) AS bedNo,
+            CONCAT(COALESCE(w.ward_name, m.dept_name, '未知病区'), ' | ', COALESCE(m.bed_no, b.bed_no, '--')) AS wardBed,
+            p.primary_diagnosis AS primaryDiagnosis,
+            m.current_heart_rate AS currentHeartRate,
+            m.monitor_status AS monitorStatus,
+            CASE m.monitor_status
+                WHEN 1 THEN '正常'
+                WHEN 2 THEN '预警'
+                WHEN 3 THEN '离线'
+                ELSE '未知'
+            END AS monitorStatusText,
+            m.warning_level AS warningLevel,
+            CASE m.warning_level
+                WHEN 0 THEN '正常'
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS warningLevelText,
+            m.latest_update_time AS updateTime
+        FROM ecg_real_time_monitor m
+                 LEFT JOIN patient_info p ON m.patient_id = p.patient_id AND p.is_deleted = 0
+                 LEFT JOIN sys_ward w ON p.ward_id = w.ward_id AND w.is_deleted = 0
+                 LEFT JOIN sys_bed b ON p.bed_id = b.bed_id AND b.is_deleted = 0
+        WHERE m.patient_id = #{patientId}
+          AND m.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectEcgTrend" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorEcgTrendPointVo">
+        SELECT
+            c.collection_end_time AS trendTime,
+            COALESCE(a.heart_rate, m.current_heart_rate) AS heartRate,
+            COALESCE(a.abnormal_level, 0) AS abnormalLevel,
+            CASE COALESCE(a.abnormal_level, 0)
+                WHEN 0 THEN '正常'
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS abnormalLevelText
+        FROM ecg_collection_record c
+                 LEFT JOIN ecg_ai_diagnosis a ON c.record_id = a.record_id AND a.is_deleted = 0
+                 LEFT JOIN ecg_real_time_monitor m ON c.patient_id = m.patient_id AND m.is_deleted = 0
+        WHERE c.patient_id = #{patientId}
+          AND c.is_deleted = 0
+        ORDER BY c.collection_end_time DESC, c.record_id DESC
+        LIMIT 30
+    </select>
+
+    <select id="selectWarningHistory" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorWarningHistoryVo">
+        SELECT
+            w.warning_id AS alertId,
+            w.warning_time AS warningTime,
+            w.warning_type AS warningType,
+            w.warning_level AS alertLevel,
+            CASE w.warning_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS alertLevelText,
+            w.handle_status AS alertStatus,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS alertStatusText,
+            w.handle_time AS handleTime,
+            w.handle_user_name AS handleUserName,
+            w.handle_opinion AS handleRemark
+        FROM ecg_abnormal_warning w
+        WHERE w.patient_id = #{patientId}
+          AND w.is_deleted = 0
+        ORDER BY w.warning_time DESC, w.warning_id DESC
+    </select>
+
+    <select id="selectContinuousRecords" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorContinuousRecordVo">
+        SELECT
+            c.record_id AS recordId,
+            c.ecg_no AS ecgNo,
+            c.collection_start_time AS collectionStartTime,
+            c.collection_end_time AS collectionEndTime,
+            c.device_name AS deviceName,
+            c.ai_analysis_status AS aiAnalysisStatus,
+            CASE c.ai_analysis_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '分析中'
+                WHEN 2 THEN '已分析'
+                WHEN 3 THEN '失败'
+                ELSE '未知'
+            END AS aiAnalysisStatusText,
+            c.report_status AS reportStatus,
+            CASE c.report_status
+                WHEN 0 THEN '未生成'
+                WHEN 1 THEN '待审核'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '驳回'
+                ELSE '未知'
+            END AS reportStatusText,
+            c.display_status AS displayStatus,
+            CASE c.display_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '已分析'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '采集失败'
+                ELSE '未知'
+            END AS displayStatusText,
+            c.ai_conclusion_short AS aiConclusionShort
+        FROM ecg_collection_record c
+        WHERE c.patient_id = #{patientId}
+          AND c.is_deleted = 0
+        ORDER BY c.collection_start_time DESC, c.record_id DESC
+        LIMIT 30
+    </select>
+</mapper>
