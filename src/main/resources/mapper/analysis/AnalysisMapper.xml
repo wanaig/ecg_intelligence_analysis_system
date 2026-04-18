@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.analysis.AnalysisMapper">
+
+    <select id="selectCoreMetrics" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo">
+        SELECT
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                WHERE c.is_deleted = 0
+                <if test="wardId != null">
+                    AND c.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS totalMeasureCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                         LEFT JOIN ecg_ai_diagnosis a ON a.record_id = c.record_id AND a.is_deleted = 0
+                WHERE c.is_deleted = 0
+                <if test="wardId != null">
+                    AND c.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+                  AND a.is_abnormal = 0
+            ) AS normalMeasureCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                         LEFT JOIN ecg_ai_diagnosis a ON a.record_id = c.record_id AND a.is_deleted = 0
+                WHERE c.is_deleted = 0
+                <if test="wardId != null">
+                    AND c.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+                  AND a.is_abnormal = 1
+            ) AS abnormalMeasureCount,
+
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                <if test="wardId != null">
+                    AND w.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS warningTotalCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                  AND w.handle_status = 3
+                <if test="wardId != null">
+                    AND w.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS warningHandledCount,
+            (
+                SELECT IFNULL(ROUND(AVG(TIMESTAMPDIFF(SECOND, w.warning_time, w.handle_time)) / 60, 2), 0)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                  AND w.handle_status = 3
+                  AND w.handle_time IS NOT NULL
+                <if test="wardId != null">
+                    AND w.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS avgWarningHandleMinutes,
+
+            (
+                SELECT COUNT(1)
+                FROM ecg_diagnosis_report r
+                         LEFT JOIN ecg_collection_record c ON r.record_id = c.record_id AND c.is_deleted = 0
+                WHERE r.is_deleted = 0
+                <if test="wardId != null">
+                    AND c.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND r.report_create_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND r.report_create_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS reportTotalCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_diagnosis_report r
+                         LEFT JOIN ecg_collection_record c ON r.record_id = c.record_id AND c.is_deleted = 0
+                WHERE r.is_deleted = 0
+                  AND r.report_status IN (2, 3)
+                <if test="wardId != null">
+                    AND c.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND r.report_create_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND r.report_create_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS reportAuditedCount,
+            (
+                SELECT IFNULL(ROUND(AVG(TIMESTAMPDIFF(SECOND, r.report_create_time, r.audit_time)) / 60, 2), 0)
+                FROM ecg_diagnosis_report r
+                         LEFT JOIN ecg_collection_record c ON r.record_id = c.record_id AND c.is_deleted = 0
+                WHERE r.is_deleted = 0
+                  AND r.report_status IN (2, 3)
+                  AND r.audit_time IS NOT NULL
+                <if test="wardId != null">
+                    AND c.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND r.report_create_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND r.report_create_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS avgReportAuditMinutes,
+
+            (
+                SELECT IFNULL(ROUND(AVG(a.confidence), 2), 0)
+                FROM ecg_ai_diagnosis a
+                         JOIN ecg_collection_record c ON a.record_id = c.record_id AND c.is_deleted = 0
+                WHERE a.is_deleted = 0
+                <if test="wardId != null">
+                    AND c.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS aiAccuracyRate,
+            (
+                SELECT COUNT(1)
+                FROM ecg_ai_diagnosis a
+                         JOIN ecg_collection_record c ON a.record_id = c.record_id AND c.is_deleted = 0
+                WHERE a.is_deleted = 0
+                <if test="wardId != null">
+                    AND c.dept_id = #{wardId}
+                </if>
+                <if test="startTime != null">
+                    AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS aiSampleTotal
+    </select>
+
+    <select id="selectWardMeasureStats" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo">
+        SELECT
+            w.ward_id AS wardId,
+            w.ward_name AS wardName,
+            COALESCE(SUM(CASE WHEN a.is_abnormal = 0 THEN 1 ELSE 0 END), 0) AS normalCount,
+            COALESCE(SUM(CASE WHEN a.is_abnormal = 1 THEN 1 ELSE 0 END), 0) AS abnormalCount
+        FROM sys_ward w
+                 LEFT JOIN ecg_collection_record c ON c.dept_id = w.ward_id AND c.is_deleted = 0
+                 LEFT JOIN ecg_ai_diagnosis a ON a.record_id = c.record_id AND a.is_deleted = 0 AND a.analysis_status = 2
+        WHERE w.is_deleted = 0
+          AND w.status = 1
+        GROUP BY w.ward_id, w.ward_name, w.sort_num
+        ORDER BY w.sort_num ASC, w.ward_id ASC
+    </select>
+
+    <select id="selectWarningLevelStats" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelStatVo">
+        SELECT '高危' AS level,
+               (
+                   SELECT COUNT(1)
+                   FROM ecg_abnormal_warning w
+                   WHERE w.is_deleted = 0
+                     AND w.warning_level = 3
+               ) AS count
+        UNION ALL
+        SELECT '中危' AS level,
+               (
+                   SELECT COUNT(1)
+                   FROM ecg_abnormal_warning w
+                   WHERE w.is_deleted = 0
+                     AND w.warning_level = 2
+               ) AS count
+        UNION ALL
+        SELECT '低危' AS level,
+               (
+                   SELECT COUNT(1)
+                   FROM ecg_abnormal_warning w
+                   WHERE w.is_deleted = 0
+                     AND w.warning_level = 1
+               ) AS count
+    </select>
+
+    <select id="selectWarningTypeStats" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeStatVo">
+        SELECT
+            w.warning_type AS warningType,
+            COUNT(1) AS count
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+          AND w.warning_type IS NOT NULL
+          AND w.warning_type != ''
+        GROUP BY w.warning_type
+        ORDER BY count DESC, warningType ASC
+    </select>
+
+    <select id="selectReportStatusStats" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportStatusStatVo">
+        SELECT '草稿' AS status,
+               (
+                   SELECT COUNT(1)
+                   FROM ecg_diagnosis_report r
+                   WHERE r.is_deleted = 0
+                     AND r.report_status = 0
+               ) AS count
+        UNION ALL
+        SELECT '待审核' AS status,
+               (
+                   SELECT COUNT(1)
+                   FROM ecg_diagnosis_report r
+                   WHERE r.is_deleted = 0
+                     AND r.report_status = 1
+               ) AS count
+        UNION ALL
+        SELECT '已完成' AS status,
+               (
+                   SELECT COUNT(1)
+                   FROM ecg_diagnosis_report r
+                   WHERE r.is_deleted = 0
+                     AND r.report_status IN (2, 3, 4)
+               ) AS count
+    </select>
+
+    <select id="selectDeviceUsageStats" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDeviceUsageStatVo">
+        SELECT '在线' AS dimension,
+               (
+                   SELECT COUNT(DISTINCT m.device_id)
+                   FROM ecg_real_time_monitor m
+                   WHERE m.is_deleted = 0
+                     AND m.monitor_status IN (1, 2)
+               ) AS count
+        UNION ALL
+        SELECT '在用' AS dimension,
+               (
+                   SELECT COUNT(DISTINCT m.device_id)
+                   FROM ecg_real_time_monitor m
+                   WHERE m.is_deleted = 0
+               ) AS count
+        UNION ALL
+        SELECT '空闲' AS dimension,
+               (
+                   SELECT IF(t.totalCount - t.inUseCount > 0, t.totalCount - t.inUseCount, 0)
+                   FROM (
+                            SELECT
+                                (SELECT COUNT(1) FROM ecg_device d WHERE d.is_deleted = 0) AS totalCount,
+                                (SELECT COUNT(DISTINCT m.device_id) FROM ecg_real_time_monitor m WHERE m.is_deleted = 0) AS inUseCount
+                        ) t
+               ) AS count
+        UNION ALL
+        SELECT '离线' AS dimension,
+               (
+                   SELECT COUNT(1)
+                   FROM ecg_device d
+                   WHERE d.is_deleted = 0
+                     AND d.device_status = 4
+               ) AS count
+    </select>
+
+    <select id="selectWardOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+        SELECT
+            CAST(w.ward_id AS CHAR) AS value,
+            w.ward_name AS label
+        FROM sys_ward w
+        WHERE w.is_deleted = 0
+          AND w.status = 1
+        ORDER BY w.sort_num ASC, w.ward_id ASC
+    </select>
+
+</mapper>

@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.patient.PatientInfoMapper">
+
+    <select id="selectDashboardStat" resultType="com.hnkjzy.ecg_collection.model.vo.patient.PatientDashboardStatVo">
+        SELECT
+            COUNT(1) AS totalPatient,
+            COALESCE(SUM(CASE WHEN p.patient_status = 1 THEN 1 ELSE 0 END), 0) AS inHospital,
+            COALESCE(SUM(CASE WHEN p.patient_status = 3 THEN 1 ELSE 0 END), 0) AS homeFollow,
+            COALESCE(SUM(CASE WHEN p.risk_level = 4 THEN 1 ELSE 0 END), 0) AS highRisk
+        FROM patient_info p
+        WHERE p.is_deleted = 0
+    </select>
+
+    <select id="selectPatientPage" resultType="com.hnkjzy.ecg_collection.model.vo.patient.PatientPageItemVo">
+        SELECT
+            p.patient_id AS patientId,
+            p.patient_name AS patientName,
+            p.gender AS gender,
+            CASE p.gender
+                WHEN 1 THEN '男'
+                WHEN 2 THEN '女'
+                ELSE '未知'
+            END AS genderText,
+            p.age AS age,
+            p.inpatient_no AS inpatientNo,
+            p.ward_id AS wardId,
+            w.ward_name AS wardName,
+            p.bed_id AS bedId,
+            b.bed_no AS bedNo,
+            p.risk_level AS riskLevel,
+            CASE p.risk_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '中高危'
+                WHEN 4 THEN '高危'
+                ELSE '未知'
+            END AS riskLevelText,
+            p.patient_status AS patientStatus,
+            CASE p.patient_status
+                WHEN 1 THEN '住院中'
+                WHEN 2 THEN '出院'
+                WHEN 3 THEN '居家随访'
+                ELSE '未知'
+            END AS patientStatusText,
+            p.primary_diagnosis AS primaryDiagnosis,
+            p.ecg_count AS ecgCount,
+            p.latest_ecg_time AS latestEcgTime
+        FROM patient_info p
+                 LEFT JOIN sys_ward w ON p.ward_id = w.ward_id AND w.is_deleted = 0
+                 LEFT JOIN sys_bed b ON p.bed_id = b.bed_id AND b.is_deleted = 0
+        WHERE p.is_deleted = 0
+        <if test="req != null and req.keyword != null and req.keyword != ''">
+            AND (
+                p.patient_name LIKE CONCAT('%', #{req.keyword}, '%')
+                OR p.inpatient_no LIKE CONCAT('%', #{req.keyword}, '%')
+            )
+        </if>
+        <if test="req != null and req.ward != null and req.ward != ''">
+            AND (
+                w.ward_name = #{req.ward}
+                OR CAST(p.ward_id AS CHAR) = #{req.ward}
+            )
+        </if>
+        <if test="riskLevelCode != null">
+            AND p.risk_level = #{riskLevelCode}
+        </if>
+        <if test="patientStatusCode != null">
+            AND p.patient_status = #{patientStatusCode}
+        </if>
+        ORDER BY p.update_time DESC, p.patient_id DESC
+    </select>
+
+    <select id="selectPatientBasicInfo" resultType="com.hnkjzy.ecg_collection.model.vo.patient.PatientBasicInfoVo">
+        SELECT
+            p.patient_id AS patientId,
+            p.patient_name AS patientName,
+            p.gender AS gender,
+            CASE p.gender
+                WHEN 1 THEN '男'
+                WHEN 2 THEN '女'
+                ELSE '未知'
+            END AS genderText,
+            p.birth_date AS birthDate,
+            p.age AS age,
+            p.id_card AS idCard,
+            p.inpatient_no AS inpatientNo,
+            p.ward_id AS wardId,
+            w.ward_name AS wardName,
+            p.bed_id AS bedId,
+            b.bed_no AS bedNo,
+            p.device_id AS deviceId,
+            p.phone AS phone,
+            p.admission_time AS admissionTime,
+            p.discharge_time AS dischargeTime,
+            p.primary_diagnosis AS primaryDiagnosis,
+            p.risk_level AS riskLevel,
+            CASE p.risk_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '中高危'
+                WHEN 4 THEN '高危'
+                ELSE '未知'
+            END AS riskLevelText,
+            p.patient_type AS patientType,
+            p.patient_status AS patientStatus,
+            CASE p.patient_status
+                WHEN 1 THEN '住院中'
+                WHEN 2 THEN '出院'
+                WHEN 3 THEN '居家随访'
+                ELSE '未知'
+            END AS patientStatusText,
+            p.follow_up_status AS followUpStatus,
+            p.ecg_count AS ecgCount,
+            p.latest_ecg_time AS latestEcgTime
+        FROM patient_info p
+                 LEFT JOIN sys_ward w ON p.ward_id = w.ward_id AND w.is_deleted = 0
+                 LEFT JOIN sys_bed b ON p.bed_id = b.bed_id AND b.is_deleted = 0
+        WHERE p.patient_id = #{patientId}
+          AND p.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectPatientEcgRecords" resultType="com.hnkjzy.ecg_collection.model.vo.patient.PatientEcgRecordVo">
+        SELECT
+            c.record_id AS recordId,
+            c.ecg_no AS ecgNo,
+            c.device_name AS deviceName,
+            c.collection_start_time AS collectionStartTime,
+            c.collection_end_time AS collectionEndTime,
+            c.ai_analysis_status AS aiAnalysisStatus,
+            CASE c.ai_analysis_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '分析中'
+                WHEN 2 THEN '已分析'
+                WHEN 3 THEN '失败'
+                ELSE '未知'
+            END AS aiAnalysisStatusText,
+            c.report_status AS reportStatus,
+            CASE c.report_status
+                WHEN 0 THEN '未生成'
+                WHEN 1 THEN '待审核'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '驳回'
+                ELSE '未知'
+            END AS reportStatusText,
+            c.display_status AS displayStatus,
+            CASE c.display_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '已分析'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '采集失败'
+                ELSE '未知'
+            END AS displayStatusText,
+            c.ai_conclusion_short AS aiConclusionShort
+        FROM ecg_collection_record c
+        WHERE c.patient_id = #{patientId}
+          AND c.is_deleted = 0
+        ORDER BY c.collection_start_time DESC, c.record_id DESC
+    </select>
+
+    <select id="selectPatientWarningHistory" resultType="com.hnkjzy.ecg_collection.model.vo.patient.PatientWarningVo">
+        SELECT
+            w.warning_id AS warningId,
+            w.warning_time AS warningTime,
+            w.warning_type AS warningType,
+            w.warning_level AS warningLevel,
+            CASE w.warning_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS warningLevelText,
+            w.warning_desc AS warningDesc,
+            w.handle_status AS handleStatus,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS handleStatusText,
+            w.handle_user_name AS handleUserName,
+            w.handle_time AS handleTime,
+            w.handle_opinion AS handleOpinion
+        FROM ecg_abnormal_warning w
+        WHERE w.patient_id = #{patientId}
+          AND w.is_deleted = 0
+        ORDER BY w.warning_time DESC, w.warning_id DESC
+    </select>
+
+    <select id="selectPatientDiagnosisInfo" resultType="com.hnkjzy.ecg_collection.model.vo.patient.PatientDiagnosisVo">
+        SELECT
+            r.report_id AS reportId,
+            r.report_no AS reportNo,
+            r.record_id AS recordId,
+            r.ai_diagnosis_id AS aiDiagnosisId,
+            r.report_create_time AS reportCreateTime,
+            r.report_status AS reportStatus,
+            CASE r.report_status
+                WHEN 0 THEN '草稿'
+                WHEN 1 THEN '待审核'
+                WHEN 2 THEN '审核通过'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '已作废'
+                ELSE '未知'
+            END AS reportStatusText,
+            r.ai_conclusion AS aiConclusion,
+            r.doctor_diagnosis AS doctorDiagnosis,
+            r.doctor_suggestion AS doctorSuggestion,
+            r.report_create_doctor_name AS reportCreateDoctorName,
+            r.audit_doctor_name AS auditDoctorName,
+            r.audit_time AS auditTime,
+            r.audit_opinion AS auditOpinion,
+            a.abnormal_level AS abnormalLevel,
+            CASE a.abnormal_level
+                WHEN 0 THEN '正常'
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS abnormalLevelText,
+            a.confidence AS aiConfidence
+        FROM ecg_diagnosis_report r
+                 LEFT JOIN ecg_ai_diagnosis a ON r.ai_diagnosis_id = a.ai_diagnosis_id AND a.is_deleted = 0
+        WHERE r.patient_id = #{patientId}
+          AND r.is_deleted = 0
+        ORDER BY r.report_create_time DESC, r.report_id DESC
+    </select>
+</mapper>
