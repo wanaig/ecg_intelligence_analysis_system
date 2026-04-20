@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/system/role")
+@RequestMapping({"/api/system/role", "/system/role"})
 public class SystemRoleController extends BaseController {
 
     private final SystemRoleService systemRoleService;

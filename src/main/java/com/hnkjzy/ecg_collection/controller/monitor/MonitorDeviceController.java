@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/monitor/device")
+@RequestMapping({"/api/monitor/device", "/monitor/device"})
 public class MonitorDeviceController extends BaseController {
 
     private final MonitorDeviceService monitorDeviceService;

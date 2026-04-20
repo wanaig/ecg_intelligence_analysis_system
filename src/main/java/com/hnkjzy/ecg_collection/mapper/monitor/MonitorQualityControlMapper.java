@@ -22,6 +22,7 @@ public interface MonitorQualityControlMapper extends BaseMapperX<EcgDeviceQualit
     IPage<MonitorQualityControlPageItemVo> selectQualityControlPage(Page<MonitorQualityControlPageItemVo> page,
                                                                     @Param("req") MonitorQualityControlPageQueryDto req,
                                                                     @Param("statusText") String statusText,
+                                                                    @Param("testTypeText") String testTypeText,
                                                                     @Param("startTime") LocalDateTime startTime,
                                                                     @Param("endTime") LocalDateTime endTime);
 
@@ -34,6 +35,8 @@ public interface MonitorQualityControlMapper extends BaseMapperX<EcgDeviceQualit
     int insertQualityControl(EcgDeviceQualityControlEntity entity);
 
     int updateQualityControlById(EcgDeviceQualityControlEntity entity);
+
+    int logicalDeleteQualityControl(@Param("qcId") Long qcId);
 
     MonitorQualityControlDetailVo selectQualityControlDetail(@Param("qcId") Long qcId);
 }

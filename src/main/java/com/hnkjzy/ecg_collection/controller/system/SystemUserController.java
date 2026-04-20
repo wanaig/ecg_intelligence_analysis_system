@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/system/user")
+@RequestMapping({"/api/system/user", "/system/user"})
 public class SystemUserController extends BaseController {
 
     private final SystemUserService systemUserService;

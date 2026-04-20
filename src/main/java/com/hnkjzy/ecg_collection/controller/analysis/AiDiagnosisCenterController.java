@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/analysis/ai-diagnosis")
+@RequestMapping({"/api/analysis/ai-diagnosis", "/analysis/ai-diagnosis"})
 public class AiDiagnosisCenterController extends BaseController {
 
     private final AiDiagnosisCenterService aiDiagnosisCenterService;

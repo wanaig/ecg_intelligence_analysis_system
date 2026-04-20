@@ -13,6 +13,7 @@ public class MonitorQualityControlPageQueryDto extends BaseDto {
 
     private Long deviceId;
     private String status;
+    private String testType;
     private String startTime;
     private String endTime;
     private Long pageNum;

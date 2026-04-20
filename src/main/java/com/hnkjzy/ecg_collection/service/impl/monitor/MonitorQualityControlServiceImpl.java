@@ -12,6 +12,7 @@ import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlUpdateDt
 import com.hnkjzy.ecg_collection.model.entity.monitor.EcgDeviceQualityControlEntity;
 import com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo;
 import com.hnkjzy.ecg_collection.model.vo.common.PageResultVo;
+import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeleteResultVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeviceInfoVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDictVo;
@@ -61,6 +62,7 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         }
 
         String statusText = parseTestResult(query.getStatus(), false, "status");
+        String testTypeText = parseTestType(query.getTestType(), false);
         LocalDateTime startTime = parseDateTime(query.getStartTime(), "startTime", false);
         LocalDateTime endTime = parseDateTime(query.getEndTime(), "endTime", true);
 
@@ -72,7 +74,7 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         long pageSize = normalizePageSize(query.getPageSize());
 
         Page<MonitorQualityControlPageItemVo> page = new Page<>(pageNum, pageSize);
-        IPage<MonitorQualityControlPageItemVo> pageData = monitorQualityControlMapper.selectQualityControlPage(page, query, statusText, startTime, endTime);
+        IPage<MonitorQualityControlPageItemVo> pageData = monitorQualityControlMapper.selectQualityControlPage(page, query, statusText, testTypeText, startTime, endTime);
 
         List<MonitorQualityControlPageItemVo> records = pageData.getRecords();
         if (records == null) {
@@ -210,6 +212,26 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public MonitorQualityControlDeleteResultVo deleteQualityControl(Long qcId) {
+        if (qcId == null || qcId <= 0) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "qcId 参数不合法");
+        }
+
+        MonitorQualityControlDetailVo existing = monitorQualityControlMapper.selectQualityControlDetail(qcId);
+        if (existing == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "质控记录不存在");
+        }
+
+        monitorQualityControlMapper.logicalDeleteQualityControl(qcId);
+
+        MonitorQualityControlDeleteResultVo resultVo = new MonitorQualityControlDeleteResultVo();
+        resultVo.setQcId(qcId);
+        resultVo.setDeleted(true);
+        return resultVo;
+    }
+
+    @Override
     public MonitorQualityControlDetailVo getQualityControlDetail(Long qcId) {
         if (qcId == null || qcId <= 0) {
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "qcId 参数不合法");
@@ -231,6 +253,7 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
     private MonitorQualityControlPageQueryDto normalizePageQuery(MonitorQualityControlPageQueryDto queryDto) {
         MonitorQualityControlPageQueryDto query = queryDto == null ? new MonitorQualityControlPageQueryDto() : queryDto;
         query.setStatus(trimToNull(query.getStatus()));
+        query.setTestType(trimToNull(query.getTestType()));
         query.setStartTime(trimToNull(query.getStartTime()));
         query.setEndTime(trimToNull(query.getEndTime()));
         return query;
@@ -245,6 +268,9 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         }
 
         String value = testType.trim();
+        if (!required && ("全部类型".equals(value) || "all".equalsIgnoreCase(value))) {
+            return null;
+        }
         switch (value) {
             case "1":
             case "日检":

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/monitor")
+@RequestMapping({"/api/monitor", "/monitor"})
 public class MonitorController extends BaseController {
 
     private final MonitorService monitorService;

@@ -29,7 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/ecg-data")
+@RequestMapping({"/api/ecg-data", "/ecg-data"})
 public class EcgDataController extends BaseController {
 
     private final EcgDataService ecgDataService;
@@ -42,9 +42,10 @@ public class EcgDataController extends BaseController {
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<EcgDataUploadResultVo> upload(@RequestParam("file") MultipartFile file,
-                                                      @RequestParam("deviceId") Long deviceId,
-                                                      @RequestParam("patientId") Long patientId) {
-        return ApiResponse.success(ecgDataService.uploadData(file, deviceId, patientId));
+                                                      @RequestParam("patientName") String patientName,
+                                                      @RequestParam("inpatientNo") String inpatientNo,
+                                                      @RequestParam("deviceNo") String deviceNo) {
+        return ApiResponse.success(ecgDataService.uploadData(file, patientName, inpatientNo, deviceNo));
     }
 
     @GetMapping("/{ecgId}")

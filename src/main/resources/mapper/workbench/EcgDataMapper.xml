@@ -76,7 +76,8 @@
         FROM patient_info p
                  LEFT JOIN sys_ward w ON p.ward_id = w.ward_id AND w.is_deleted = 0
                  LEFT JOIN sys_bed b ON p.bed_id = b.bed_id AND b.is_deleted = 0
-        WHERE p.patient_id = #{patientId}
+                WHERE p.patient_name = #{patientName}
+                    AND p.inpatient_no = #{inpatientNo}
           AND p.is_deleted = 0
         LIMIT 1
     </select>
@@ -88,7 +89,7 @@
             d.device_name AS deviceName,
             d.device_type AS deviceType
         FROM ecg_device d
-        WHERE d.device_id = #{deviceId}
+                WHERE d.device_code = #{deviceNo}
           AND d.is_deleted = 0
         LIMIT 1
     </select>

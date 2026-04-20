@@ -19,7 +19,7 @@ public interface EcgDataService extends BaseService {
 
     WorkbenchPageListVo<EcgDataPageItemVo> pageEcgData(EcgDataPageQueryDto queryDto);
 
-    EcgDataUploadResultVo uploadData(MultipartFile file, Long deviceId, Long patientId);
+    EcgDataUploadResultVo uploadData(MultipartFile file, String patientName, String inpatientNo, String deviceNo);
 
     WorkbenchEcgDetailVo getEcgDetail(Long ecgId);
 
