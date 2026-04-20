@@ -1,7 +1,6 @@
 package com.hnkjzy.ecg_collection.service.impl.workbench;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
@@ -48,6 +47,8 @@ public class EcgDataServiceImpl extends BaseServiceImpl implements EcgDataServic
     private static final long DEFAULT_PAGE_NUM = 1L;
     private static final long DEFAULT_PAGE_SIZE = 10L;
     private static final long MAX_PAGE_SIZE = 200L;
+    private static final long ECG_RECORD_ID_BASE = 2100L;
+    private static final long ECG_RECORD_ID_MAX_ALLOWED = 9_999_999_999L;
 
     private static final DateTimeFormatter ECG_NO_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final List<DateTimeFormatter> DATE_TIME_FORMATTERS = List.of(
@@ -113,7 +114,7 @@ public class EcgDataServiceImpl extends BaseServiceImpl implements EcgDataServic
             throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "device not found");
         }
 
-        Long recordId = IdWorker.getId();
+        Long recordId = nextRecordId();
         LocalDateTime now = LocalDateTime.now();
         String ecgNo = buildEcgNo(recordId, now);
         String sourceFileUrl = buildSourceFileUrl(file, recordId);
@@ -417,6 +418,15 @@ public class EcgDataServiceImpl extends BaseServiceImpl implements EcgDataServic
             return null;
         }
         return value.trim();
+    }
+
+    private Long nextRecordId() {
+        Long maxRecordId = ecgDataMapper.selectMaxRecordIdInRangeForUpdate(ECG_RECORD_ID_MAX_ALLOWED);
+        long base = maxRecordId == null ? ECG_RECORD_ID_BASE : maxRecordId;
+        if (base >= ECG_RECORD_ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "心电记录ID已达到上限，请联系管理员");
+        }
+        return base + 1;
     }
 
     private static final class DateRange {

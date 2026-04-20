@@ -9,6 +9,13 @@
         d.dept_name AS deptName,
         d.parent_id AS parentDeptId,
         d.parent_name AS parentDeptName,
+        d.dept_type AS deptType,
+        CASE d.dept_type
+            WHEN 1 THEN '科室'
+            WHEN 2 THEN '病区'
+            WHEN 3 THEN '居家站点'
+            ELSE '未知'
+        END AS deptTypeText,
         d.dept_type AS deptLevel,
         CASE d.dept_type
             WHEN 1 THEN '科室'
@@ -16,6 +23,24 @@
             WHEN 3 THEN '居家站点'
             ELSE '未知'
         END AS deptLevelText,
+        (
+            SELECT su.real_name
+            FROM sys_user su
+            WHERE su.dept_id = d.dept_id
+              AND su.is_deleted = 0
+              AND su.role_name LIKE '%主任%'
+            ORDER BY su.user_id ASC
+            LIMIT 1
+        ) AS director,
+        (
+            SELECT su.phone
+            FROM sys_user su
+            WHERE su.dept_id = d.dept_id
+              AND su.is_deleted = 0
+              AND su.role_name LIKE '%主任%'
+            ORDER BY su.user_id ASC
+            LIMIT 1
+        ) AS phone,
         (
             SELECT su.real_name
             FROM sys_user su
@@ -76,6 +101,16 @@
         ORDER BY d.sort ASC, d.dept_id ASC
     </select>
 
+    <select id="selectDepartmentTreeAll" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemDepartmentTreeItemVo">
+        SELECT
+            d.dept_id AS deptId,
+            d.parent_id AS parentDeptId,
+            d.dept_name AS deptName
+        FROM sys_department d
+        WHERE d.is_deleted = 0
+        ORDER BY d.sort ASC, d.dept_id ASC
+    </select>
+
     <select id="countDepartmentName" resultType="java.lang.Long">
         SELECT COUNT(1)
         FROM sys_department d
@@ -106,6 +141,15 @@
         WHERE d.dept_id = #{deptId}
           AND d.is_deleted = 0
         LIMIT 1
+    </select>
+
+    <select id="selectMaxDepartmentIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT d.dept_id
+        FROM sys_department d
+        WHERE d.dept_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY d.dept_id DESC
+        LIMIT 1
+        FOR UPDATE
     </select>
 
     <select id="selectMaxSortByParent" resultType="java.lang.Long">
@@ -190,6 +234,15 @@
           AND u.is_deleted = 0
     </select>
 
+        <select id="countBedsByDepartmentId" resultType="java.lang.Long">
+                SELECT COUNT(1)
+                FROM sys_bed b
+                                 INNER JOIN sys_ward w ON b.ward_id = w.ward_id
+                WHERE w.dept_id = #{deptId}
+                    AND w.is_deleted = 0
+                    AND b.is_deleted = 0
+        </select>
+
     <select id="countDevicesByDepartmentId" resultType="java.lang.Long">
         SELECT COUNT(1)
         FROM ecg_device ed
@@ -200,6 +253,14 @@
     <update id="logicalDeleteDepartment">
         UPDATE sys_department
         SET is_deleted = 1,
+            update_time = NOW()
+        WHERE dept_id = #{deptId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateDepartmentStatusById">
+        UPDATE sys_department
+        SET status = #{status},
             update_time = NOW()
         WHERE dept_id = #{deptId}
           AND is_deleted = 0

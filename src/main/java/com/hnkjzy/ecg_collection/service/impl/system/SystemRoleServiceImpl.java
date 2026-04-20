@@ -1,7 +1,6 @@
 package com.hnkjzy.ecg_collection.service.impl.system;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
@@ -48,6 +47,10 @@ public class SystemRoleServiceImpl extends BaseServiceImpl implements SystemRole
     private static final long DEFAULT_PAGE_NUM = 1L;
     private static final long DEFAULT_PAGE_SIZE = 10L;
     private static final long MAX_PAGE_SIZE = 200L;
+    private static final long ROLE_ID_BASE = 1000L;
+    private static final long ROLE_ID_MAX_ALLOWED = 9_999_999_999L;
+    private static final long ROLE_PERMISSION_ID_BASE = 1100L;
+    private static final long ROLE_PERMISSION_ID_MAX_ALLOWED = 9_999_999_999L;
 
     private static final Long SUPER_ADMIN_ROLE_ID = 1001L;
     private static final String SUPER_ADMIN_ROLE_NAME_CN = "\u7cfb\u7edf\u7ba1\u7406\u5458";
@@ -94,9 +97,10 @@ public class SystemRoleServiceImpl extends BaseServiceImpl implements SystemRole
 
         String description = normalizeDescription(createDto.getDescription());
         Integer status = createDto.getStatus() == null ? 1 : parseStatusCode(createDto.getStatus(), "status");
+        Long roleId = nextRoleId();
 
         SysRoleEntity entity = new SysRoleEntity();
-        entity.setRoleId(IdWorker.getId());
+        entity.setRoleId(roleId);
         entity.setRoleName(roleName);
         entity.setDescription(description);
         entity.setUserCount(0);
@@ -263,7 +267,7 @@ public class SystemRoleServiceImpl extends BaseServiceImpl implements SystemRole
 
         for (Map.Entry<String, String> entry : permissionCodeNameMap.entrySet()) {
             SysRolePermissionEntity entity = new SysRolePermissionEntity();
-            entity.setId(IdWorker.getId());
+            entity.setId(nextRolePermissionId());
             entity.setRoleId(saveDto.getRoleId());
             entity.setPermissionCode(entry.getKey());
             entity.setPermissionName(entry.getValue());
@@ -397,5 +401,23 @@ public class SystemRoleServiceImpl extends BaseServiceImpl implements SystemRole
             return null;
         }
         return value.trim();
+    }
+
+    private Long nextRoleId() {
+        Long maxRoleId = systemRoleMapper.selectMaxRoleIdInRangeForUpdate(ROLE_ID_MAX_ALLOWED);
+        long base = maxRoleId == null ? ROLE_ID_BASE : maxRoleId;
+        if (base >= ROLE_ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "角色ID已达到上限，请联系管理员");
+        }
+        return base + 1;
+    }
+
+    private Long nextRolePermissionId() {
+        Long maxRolePermissionId = systemRoleMapper.selectMaxRolePermissionIdInRangeForUpdate(ROLE_PERMISSION_ID_MAX_ALLOWED);
+        long base = maxRolePermissionId == null ? ROLE_PERMISSION_ID_BASE : maxRolePermissionId;
+        if (base >= ROLE_PERMISSION_ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "角色权限ID已达到上限，请联系管理员");
+        }
+        return base + 1;
     }
 }

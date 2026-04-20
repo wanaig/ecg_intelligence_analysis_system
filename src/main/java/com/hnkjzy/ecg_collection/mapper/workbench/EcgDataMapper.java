@@ -30,6 +30,8 @@ public interface EcgDataMapper {
 
     EcgDataDeviceSnapshotVo selectDeviceSnapshot(@Param("deviceNo") String deviceNo);
 
+    Long selectMaxRecordIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
     int insertCollectionRecord(EcgCollectionRecordEntity entity);
 
     Long countEcgById(@Param("ecgId") Long ecgId);

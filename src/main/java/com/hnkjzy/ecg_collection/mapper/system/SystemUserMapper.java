@@ -34,6 +34,10 @@ public interface SystemUserMapper extends BaseMapperX<SysUserEntity> {
 
     String selectDeptNameById(@Param("deptId") Long deptId);
 
+    Long selectMaxUserIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
+    Long selectMaxOperationLogIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
     int insertUser(SysUserEntity entity);
 
     int updateUserById(SysUserEntity entity);

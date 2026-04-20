@@ -200,6 +200,15 @@
         LIMIT 1
     </select>
 
+    <select id="selectMaxReportIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT r.report_id
+        FROM ecg_diagnosis_report r
+        WHERE r.report_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY r.report_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     <insert id="insertAuditReport">
         INSERT INTO ecg_diagnosis_report (
             report_id,

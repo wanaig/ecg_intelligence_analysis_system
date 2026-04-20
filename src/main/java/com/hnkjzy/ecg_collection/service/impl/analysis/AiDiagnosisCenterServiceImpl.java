@@ -1,7 +1,6 @@
 package com.hnkjzy.ecg_collection.service.impl.analysis;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
@@ -50,6 +49,8 @@ public class AiDiagnosisCenterServiceImpl extends BaseServiceImpl implements AiD
     private static final long DEFAULT_PAGE_NUM = 1L;
     private static final long DEFAULT_PAGE_SIZE = 10L;
     private static final long MAX_PAGE_SIZE = 200L;
+    private static final long REPORT_ID_BASE = 2300L;
+    private static final long REPORT_ID_MAX_ALLOWED = 9_999_999_999L;
     private static final int DEFAULT_SAMPLING_RATE = 250;
     private static final int DEFAULT_LEAD_COUNT = 12;
     private static final int WAVEFORM_POINT_COUNT = 1200;
@@ -185,7 +186,7 @@ public class AiDiagnosisCenterServiceImpl extends BaseServiceImpl implements AiD
         String auditOpinion = "审核通过";
 
         if (reportId == null) {
-            reportId = IdWorker.getId();
+            reportId = nextReportId();
             reportNo = buildReportNo(now, reportId);
             aiDiagnosisCenterMapper.insertAuditReport(
                     reportId,
@@ -442,6 +443,15 @@ public class AiDiagnosisCenterServiceImpl extends BaseServiceImpl implements AiD
             return operator.getUserName().trim();
         }
         return "系统审核医生";
+    }
+
+    private Long nextReportId() {
+        Long maxReportId = aiDiagnosisCenterMapper.selectMaxReportIdInRangeForUpdate(REPORT_ID_MAX_ALLOWED);
+        long base = maxReportId == null ? REPORT_ID_BASE : maxReportId;
+        if (base >= REPORT_ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "诊断报告ID已达到上限，请联系管理员");
+        }
+        return base + 1;
     }
 
     private SystemUserOperatorVo resolveCurrentOperator(HttpServletRequest request) {

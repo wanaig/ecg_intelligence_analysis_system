@@ -12,6 +12,7 @@ public class SystemDepartmentDeleteResultVo extends BaseVo {
     private Boolean deleted;
     private Long childCount;
     private Long boundUserCount;
+    private Long boundBedCount;
     private Long boundDeviceCount;
     private Boolean forcedDelete;
 }

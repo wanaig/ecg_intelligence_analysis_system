@@ -34,6 +34,8 @@ public interface MonitorDeviceMapper extends BaseMapperX<EcgDeviceEntity> {
 
     Long countDeviceCode(@Param("deviceCode") String deviceCode, @Param("excludeDeviceId") Long excludeDeviceId);
 
+    Long selectMaxDeviceIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
     int insertDevice(EcgDeviceEntity entity);
 
     int updateDeviceById(EcgDeviceEntity entity);

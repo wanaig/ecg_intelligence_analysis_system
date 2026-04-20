@@ -92,6 +92,24 @@
         LIMIT 1
     </select>
 
+    <select id="selectMaxUserIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT u.user_id
+        FROM sys_user u
+        WHERE u.user_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY u.user_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <select id="selectMaxOperationLogIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT l.log_id
+        FROM sys_operation_log l
+        WHERE l.log_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY l.log_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     <insert id="insertUser" parameterType="com.hnkjzy.ecg_collection.model.entity.system.SysUserEntity">
         INSERT INTO sys_user (
             user_id,

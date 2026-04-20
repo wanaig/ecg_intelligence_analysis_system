@@ -2,7 +2,6 @@ package com.hnkjzy.ecg_collection.service.impl.system;
 
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
@@ -48,6 +47,10 @@ public class SystemUserServiceImpl extends BaseServiceImpl implements SystemUser
     private static final long DEFAULT_PAGE_NUM = 1L;
     private static final long DEFAULT_PAGE_SIZE = 10L;
     private static final long MAX_PAGE_SIZE = 200L;
+    private static final long USER_ID_BASE = 1300L;
+    private static final long USER_ID_MAX_ALLOWED = 9_999_999_999L;
+    private static final long OP_LOG_ID_BASE = 1400L;
+    private static final long OP_LOG_ID_MAX_ALLOWED = 9_999_999_999L;
 
     private static final String DEFAULT_PASSWORD = "123456";
     private static final String SUPER_ADMIN_USER_NAME = "admin";
@@ -153,9 +156,10 @@ public class SystemUserServiceImpl extends BaseServiceImpl implements SystemUser
         String email = normalizeEmail(createDto.getEmail());
         Integer status = createDto.getStatus() == null ? 1 : parseStatusCode(createDto.getStatus(), "status");
         String encodedPassword = encodePassword(resolvePassword(createDto.getPassword(), true));
+        Long userId = nextUserId();
 
         SysUserEntity entity = new SysUserEntity();
-        entity.setUserId(IdWorker.getId());
+        entity.setUserId(userId);
         entity.setUserName(userName);
         entity.setRealName(realName);
         entity.setPassword(encodedPassword);
@@ -529,7 +533,7 @@ public class SystemUserServiceImpl extends BaseServiceImpl implements SystemUser
 
     private void insertDeleteOperationLog(SystemUserOperatorVo operator, SystemUserDetailVo target, HttpServletRequest request) {
         SysOperationLogEntity logEntity = new SysOperationLogEntity();
-        logEntity.setLogId(IdWorker.getId());
+        logEntity.setLogId(nextOperationLogId());
         logEntity.setUserId(operator.getUserId());
         logEntity.setRealName(operator.getRealName());
         logEntity.setModule(MODULE_USER_MANAGE);
@@ -590,5 +594,23 @@ public class SystemUserServiceImpl extends BaseServiceImpl implements SystemUser
             return null;
         }
         return value.trim();
+    }
+
+    private Long nextUserId() {
+        Long maxUserId = systemUserMapper.selectMaxUserIdInRangeForUpdate(USER_ID_MAX_ALLOWED);
+        long base = maxUserId == null ? USER_ID_BASE : maxUserId;
+        if (base >= USER_ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "用户ID已达到上限，请联系管理员");
+        }
+        return base + 1;
+    }
+
+    private Long nextOperationLogId() {
+        Long maxLogId = systemUserMapper.selectMaxOperationLogIdInRangeForUpdate(OP_LOG_ID_MAX_ALLOWED);
+        long base = maxLogId == null ? OP_LOG_ID_BASE : maxLogId;
+        if (base >= OP_LOG_ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "操作日志ID已达到上限，请联系管理员");
+        }
+        return base + 1;
     }
 }

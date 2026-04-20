@@ -86,6 +86,15 @@
         </if>
     </select>
 
+    <select id="selectMaxDeviceIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT d.device_id
+        FROM ecg_device d
+        WHERE d.device_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY d.device_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     <insert id="insertDevice" parameterType="com.hnkjzy.ecg_collection.model.entity.monitor.EcgDeviceEntity">
         INSERT INTO ecg_device (
             device_id,

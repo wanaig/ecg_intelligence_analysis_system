@@ -94,6 +94,15 @@
         LIMIT 1
     </select>
 
+    <select id="selectMaxRecordIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT c.record_id
+        FROM ecg_collection_record c
+        WHERE c.record_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY c.record_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     <insert id="insertCollectionRecord" parameterType="com.hnkjzy.ecg_collection.model.entity.workbench.EcgCollectionRecordEntity">
         INSERT INTO ecg_collection_record (
             record_id,
