@@ -5,6 +5,7 @@ import com.hnkjzy.ecg_collection.controller.BaseController;
 import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlCreateDto;
 import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlUpdateDto;
+import com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo;
 import com.hnkjzy.ecg_collection.model.vo.common.PageResultVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeleteResultVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDetailVo;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 实时监护-质控管理接口。
  */
@@ -34,6 +37,11 @@ public class MonitorQualityControlController extends BaseController {
     @PostMapping("/page")
     public ApiResponse<PageResultVo<MonitorQualityControlPageItemVo>> page(@RequestBody(required = false) MonitorQualityControlPageQueryDto queryDto) {
         return ApiResponse.success(monitorQualityControlService.pageQualityControls(queryDto));
+    }
+
+    @GetMapping("/device-options")
+    public ApiResponse<List<DictOptionVo>> deviceOptions() {
+        return ApiResponse.success(monitorQualityControlService.getNormalDeviceOptions());
     }
 
     @GetMapping("/dicts")

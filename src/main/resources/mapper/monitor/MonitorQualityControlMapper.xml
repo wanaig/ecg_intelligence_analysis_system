@@ -25,11 +25,14 @@
         <if test="req != null and req.deviceId != null">
             AND q.device_id = #{req.deviceId}
         </if>
-        <if test="statusText != null and statusText != ''">
-            AND q.test_result = #{statusText}
+        <if test="testResultText != null and testResultText != ''">
+            AND q.test_result = #{testResultText}
         </if>
         <if test="testTypeText != null and testTypeText != ''">
             AND q.test_type = #{testTypeText}
+        </if>
+        <if test="deviceStatusText != null and deviceStatusText != ''">
+            AND q.device_status = #{deviceStatusText}
         </if>
         <if test="startTime != null">
             AND q.test_time <![CDATA[>=]]> #{startTime}
@@ -40,12 +43,13 @@
         ORDER BY q.test_time DESC, q.qc_id DESC
     </select>
 
-    <select id="selectDeviceOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+    <select id="selectNormalDeviceOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
         SELECT
             CAST(d.device_id AS CHAR) AS value,
-            CONCAT(d.device_name, ' (', COALESCE(d.device_code, '-'), ')') AS label
+            d.device_name AS label
         FROM ecg_device d
         WHERE d.is_deleted = 0
+          AND d.device_status = 1
         ORDER BY d.update_time DESC, d.device_id DESC
     </select>
 

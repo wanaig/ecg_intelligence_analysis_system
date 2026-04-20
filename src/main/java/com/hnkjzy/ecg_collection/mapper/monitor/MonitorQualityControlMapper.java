@@ -21,12 +21,13 @@ public interface MonitorQualityControlMapper extends BaseMapperX<EcgDeviceQualit
 
     IPage<MonitorQualityControlPageItemVo> selectQualityControlPage(Page<MonitorQualityControlPageItemVo> page,
                                                                     @Param("req") MonitorQualityControlPageQueryDto req,
-                                                                    @Param("statusText") String statusText,
+                                                                    @Param("testResultText") String testResultText,
                                                                     @Param("testTypeText") String testTypeText,
+                                                                    @Param("deviceStatusText") String deviceStatusText,
                                                                     @Param("startTime") LocalDateTime startTime,
                                                                     @Param("endTime") LocalDateTime endTime);
 
-    List<DictOptionVo> selectDeviceOptions();
+    List<DictOptionVo> selectNormalDeviceOptions();
 
     MonitorQualityControlDeviceInfoVo selectDeviceInfoById(@Param("deviceId") Long deviceId);
 
