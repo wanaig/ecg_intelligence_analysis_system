@@ -64,6 +64,17 @@
         ORDER BY d.sort ASC, d.dept_id ASC
     </select>
 
+    <select id="selectTestUserOptions" resultType="com.hnkjzy.ecg_collection.model.vo.system.SystemTestUserOptionVo">
+        SELECT
+            u.user_id AS userId,
+            u.user_name AS userName,
+            u.real_name AS realName
+        FROM sys_user u
+        WHERE u.is_deleted = 0
+          AND u.status = 1
+        ORDER BY u.user_name ASC, u.user_id ASC
+    </select>
+
     <select id="countUserName" resultType="java.lang.Long">
         SELECT COUNT(1)
         FROM sys_user u

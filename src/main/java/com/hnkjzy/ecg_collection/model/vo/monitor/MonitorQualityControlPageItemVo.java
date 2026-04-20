@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 质控记录分页项。
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 public class MonitorQualityControlPageItemVo extends BaseVo {
 
     private Long qcId;
+    private String qcNo;
     private Long deviceId;
     private String deviceName;
     private Long deptId;
@@ -27,4 +29,5 @@ public class MonitorQualityControlPageItemVo extends BaseVo {
     private String remark;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private List<String> actionPermissions;
 }

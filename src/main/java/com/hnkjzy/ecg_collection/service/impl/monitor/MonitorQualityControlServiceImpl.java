@@ -13,10 +13,14 @@ import com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo;
 import com.hnkjzy.ecg_collection.model.vo.common.PageResultVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeleteResultVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDetailVo;
+import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeviceSnapshotVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeviceInfoVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDictVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlIndicatorVo;
+import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlParamVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlPageItemVo;
+import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlTesterSnapshotVo;
+import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlTimeSnapshotVo;
 import com.hnkjzy.ecg_collection.service.impl.BaseServiceImpl;
 import com.hnkjzy.ecg_collection.service.monitor.MonitorQualityControlService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +49,12 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
     private static final long QC_ID_BASE = 2800L;
     private static final long QC_ID_MAX_ALLOWED = 9_999_999_999L;
 
+    private static final List<String> QUALITY_CONTROL_ACTION_PERMISSIONS = List.of(
+            "monitor:quality:detail",
+            "monitor:quality:update",
+            "monitor:quality:delete"
+    );
+
     private static final DateTimeFormatter STANDARD_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private static final List<DateTimeFormatter> DATETIME_FORMATTERS = List.of(
@@ -62,8 +72,9 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "deviceId 参数不合法");
         }
 
-        String statusText = parseTestResult(query.getStatus(), false, "status");
+        String testResultText = parseTestResult(query.getTestResult(), false, "testResult");
         String testTypeText = parseTestType(query.getTestType(), false);
+        String deviceStatusText = parseDeviceStatus(query.getDeviceStatus(), false);
         LocalDateTime startTime = parseDateTime(query.getStartTime(), "startTime", false);
         LocalDateTime endTime = parseDateTime(query.getEndTime(), "endTime", true);
 
@@ -75,11 +86,24 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         long pageSize = normalizePageSize(query.getPageSize());
 
         Page<MonitorQualityControlPageItemVo> page = new Page<>(pageNum, pageSize);
-        IPage<MonitorQualityControlPageItemVo> pageData = monitorQualityControlMapper.selectQualityControlPage(page, query, statusText, testTypeText, startTime, endTime);
+        IPage<MonitorQualityControlPageItemVo> pageData = monitorQualityControlMapper.selectQualityControlPage(
+                page,
+                query,
+                testResultText,
+                testTypeText,
+                deviceStatusText,
+                startTime,
+                endTime
+        );
 
         List<MonitorQualityControlPageItemVo> records = pageData.getRecords();
         if (records == null) {
             records = Collections.emptyList();
+        } else {
+            for (MonitorQualityControlPageItemVo item : records) {
+                item.setQcNo(buildQcNo(item.getQcId()));
+                item.setActionPermissions(QUALITY_CONTROL_ACTION_PERMISSIONS);
+            }
         }
 
         return PageResultVo.<MonitorQualityControlPageItemVo>builder()
@@ -92,19 +116,24 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
     }
 
     @Override
+    public List<DictOptionVo> getNormalDeviceOptions() {
+        List<DictOptionVo> deviceOptions = monitorQualityControlMapper.selectNormalDeviceOptions();
+        return deviceOptions == null ? Collections.emptyList() : deviceOptions;
+    }
+
+    @Override
     public MonitorQualityControlDictVo getQualityControlDicts() {
         MonitorQualityControlDictVo dictVo = new MonitorQualityControlDictVo();
 
-        List<DictOptionVo> deviceOptions = monitorQualityControlMapper.selectDeviceOptions();
-        if (deviceOptions == null) {
-            deviceOptions = new ArrayList<>();
-        }
-        deviceOptions.add(0, buildOption("", "全部设备"));
+        List<DictOptionVo> testResultOptions = new ArrayList<>();
+        testResultOptions.add(buildOption("", "全部结果"));
+        testResultOptions.add(buildOption("1", "通过"));
+        testResultOptions.add(buildOption("2", "未通过"));
 
-        List<DictOptionVo> testStatusOptions = new ArrayList<>();
-        testStatusOptions.add(buildOption("", "全部状态"));
-        testStatusOptions.add(buildOption("1", "通过"));
-        testStatusOptions.add(buildOption("2", "未通过"));
+        List<DictOptionVo> deviceStatusOptions = new ArrayList<>();
+        deviceStatusOptions.add(buildOption("", "全部状态"));
+        deviceStatusOptions.add(buildOption("1", "正常"));
+        deviceStatusOptions.add(buildOption("2", "异常"));
 
         List<DictOptionVo> testTypeOptions = new ArrayList<>();
         testTypeOptions.add(buildOption("", "全部类型"));
@@ -113,8 +142,9 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         testTypeOptions.add(buildOption("3", "月检"));
         testTypeOptions.add(buildOption("4", "远程检测"));
 
-        dictVo.setDeviceOptions(deviceOptions);
-        dictVo.setTestStatusOptions(testStatusOptions);
+        dictVo.setDeviceStatusOptions(deviceStatusOptions);
+        dictVo.setTestResultOptions(testResultOptions);
+        dictVo.setTestStatusOptions(testResultOptions);
         dictVo.setTestTypeOptions(testTypeOptions);
         return dictVo;
     }
@@ -244,6 +274,7 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
             throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "质控记录不存在");
         }
 
+        enrichDetailSnapshot(detailVo);
         detailVo.setIndicatorDetails(buildIndicatorDetails(detailVo));
         return detailVo;
     }
@@ -254,8 +285,9 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
 
     private MonitorQualityControlPageQueryDto normalizePageQuery(MonitorQualityControlPageQueryDto queryDto) {
         MonitorQualityControlPageQueryDto query = queryDto == null ? new MonitorQualityControlPageQueryDto() : queryDto;
-        query.setStatus(trimToNull(query.getStatus()));
         query.setTestType(trimToNull(query.getTestType()));
+        query.setTestResult(trimToNull(query.getTestResult()));
+        query.setDeviceStatus(trimToNull(query.getDeviceStatus()));
         query.setStartTime(trimToNull(query.getStartTime()));
         query.setEndTime(trimToNull(query.getEndTime()));
         return query;
@@ -300,6 +332,9 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         }
 
         String value = deviceStatus.trim();
+        if (!required && ("全部状态".equals(value) || "all".equalsIgnoreCase(value))) {
+            return null;
+        }
         switch (value) {
             case "1":
             case "正常":
@@ -321,7 +356,7 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         }
 
         String value = testResult.trim();
-        if (!required && "全部状态".equals(value)) {
+        if (!required && ("全部状态".equals(value) || "全部结果".equals(value) || "all".equalsIgnoreCase(value))) {
             return null;
         }
         switch (value) {
@@ -432,6 +467,10 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
 
     private List<MonitorQualityControlIndicatorVo> buildIndicatorDetails(MonitorQualityControlDetailVo detailVo) {
         List<MonitorQualityControlIndicatorVo> indicators = new ArrayList<>();
+        indicators.add(buildIndicator("qc_no", "质控单号", detailVo.getQcNo(), "已生成"));
+        indicators.add(buildIndicator("device_name", "设备名称", detailVo.getDeviceName(), "已绑定"));
+        indicators.add(buildIndicator("dept_name", "所属科室", detailVo.getDeptName(), "已归属"));
+        indicators.add(buildIndicator("test_user", "测试人员", detailVo.getTestUserName(), "已记录"));
         indicators.add(buildIndicator("device_status", "设备状态", detailVo.getDeviceStatus(), "正常".equals(detailVo.getDeviceStatus()) ? "达标" : "异常"));
         indicators.add(buildIndicator("test_result", "测试结果", detailVo.getTestResult(), detailVo.getTestResult()));
         indicators.add(buildIndicator("test_type", "测试类型", detailVo.getTestType(), "已执行"));
@@ -439,7 +478,39 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         if (detailVo.getTestTime() != null) {
             indicators.add(buildIndicator("test_time", "测试时间", detailVo.getTestTime().format(STANDARD_DATETIME_FORMATTER), "已记录"));
         }
+        if (StringUtils.hasText(detailVo.getRemark())) {
+            indicators.add(buildIndicator("remark", "备注", detailVo.getRemark(), "已登记"));
+        }
         return indicators;
+    }
+
+    private void enrichDetailSnapshot(MonitorQualityControlDetailVo detailVo) {
+        detailVo.setQcNo(buildQcNo(detailVo.getQcId()));
+
+        MonitorQualityControlDeviceSnapshotVo deviceInfo = new MonitorQualityControlDeviceSnapshotVo();
+        deviceInfo.setDeviceId(detailVo.getDeviceId());
+        deviceInfo.setDeviceName(detailVo.getDeviceName());
+        deviceInfo.setDeptId(detailVo.getDeptId());
+        deviceInfo.setDeptName(detailVo.getDeptName());
+        deviceInfo.setDeviceStatus(detailVo.getDeviceStatus());
+        detailVo.setDeviceInfo(deviceInfo);
+
+        MonitorQualityControlTesterSnapshotVo testerInfo = new MonitorQualityControlTesterSnapshotVo();
+        testerInfo.setTestUserId(detailVo.getTestUserId());
+        testerInfo.setTestUserName(detailVo.getTestUserName());
+        detailVo.setTesterInfo(testerInfo);
+
+        MonitorQualityControlParamVo qualityParams = new MonitorQualityControlParamVo();
+        qualityParams.setTestType(detailVo.getTestType());
+        qualityParams.setDeviceStatus(detailVo.getDeviceStatus());
+        qualityParams.setTestResult(detailVo.getTestResult());
+        detailVo.setQualityParams(qualityParams);
+
+        MonitorQualityControlTimeSnapshotVo timeSnapshot = new MonitorQualityControlTimeSnapshotVo();
+        timeSnapshot.setTestTime(detailVo.getTestTime());
+        timeSnapshot.setCreateTime(detailVo.getCreateTime());
+        timeSnapshot.setUpdateTime(detailVo.getUpdateTime());
+        detailVo.setTimeSnapshot(timeSnapshot);
     }
 
     private MonitorQualityControlIndicatorVo buildIndicator(String code, String name, String value, String result) {
@@ -473,6 +544,13 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
             return null;
         }
         return value.trim();
+    }
+
+    private String buildQcNo(Long qcId) {
+        if (qcId == null) {
+            return null;
+        }
+        return "QC" + qcId;
     }
 
     private Long nextQcId() {

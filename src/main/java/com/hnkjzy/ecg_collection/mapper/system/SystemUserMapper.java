@@ -11,6 +11,7 @@ import com.hnkjzy.ecg_collection.model.vo.system.SystemUserDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserOperatorVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserSaveResultVo;
+import com.hnkjzy.ecg_collection.model.vo.system.SystemTestUserOptionVo;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -27,6 +28,8 @@ public interface SystemUserMapper extends BaseMapperX<SysUserEntity> {
     List<DictOptionVo> selectRoleOptions();
 
     List<DictOptionVo> selectDepartmentOptions();
+
+    List<SystemTestUserOptionVo> selectTestUserOptions();
 
     Long countUserName(@Param("userName") String userName, @Param("excludeUserId") Long excludeUserId);
 

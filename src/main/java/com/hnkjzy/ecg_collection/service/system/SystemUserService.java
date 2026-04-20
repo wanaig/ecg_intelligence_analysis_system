@@ -11,8 +11,11 @@ import com.hnkjzy.ecg_collection.model.vo.system.SystemUserDictVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserResetPasswordResultVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserSaveResultVo;
+import com.hnkjzy.ecg_collection.model.vo.system.SystemTestUserOptionVo;
 import com.hnkjzy.ecg_collection.service.BaseService;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
 
 /**
  * 系统管理-用户管理服务。
@@ -22,6 +25,8 @@ public interface SystemUserService extends BaseService {
     PageResultVo<SystemUserPageItemVo> pageUsers(SystemUserPageQueryDto queryDto);
 
     SystemUserDictVo getUserDicts();
+
+    List<SystemTestUserOptionVo> listTestUserOptions();
 
     SystemUserSaveResultVo createUser(SystemUserCreateDto createDto);
 

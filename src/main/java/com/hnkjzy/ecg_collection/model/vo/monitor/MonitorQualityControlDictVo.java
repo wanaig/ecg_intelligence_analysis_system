@@ -14,7 +14,8 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class MonitorQualityControlDictVo extends BaseVo {
 
-    private List<DictOptionVo> deviceOptions;
+    private List<DictOptionVo> deviceStatusOptions;
+    private List<DictOptionVo> testResultOptions;
     private List<DictOptionVo> testStatusOptions;
     private List<DictOptionVo> testTypeOptions;
 }

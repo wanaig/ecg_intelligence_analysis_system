@@ -21,6 +21,7 @@ import com.hnkjzy.ecg_collection.model.vo.system.SystemUserOperatorVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserResetPasswordResultVo;
 import com.hnkjzy.ecg_collection.model.vo.system.SystemUserSaveResultVo;
+import com.hnkjzy.ecg_collection.model.vo.system.SystemTestUserOptionVo;
 import com.hnkjzy.ecg_collection.service.impl.BaseServiceImpl;
 import com.hnkjzy.ecg_collection.service.system.SystemUserService;
 import com.hnkjzy.ecg_collection.util.JwtUtil;
@@ -130,6 +131,12 @@ public class SystemUserServiceImpl extends BaseServiceImpl implements SystemUser
         dictVo.setDepartmentOptions(departmentOptions);
         dictVo.setStatusOptions(statusOptions);
         return dictVo;
+    }
+
+    @Override
+    public List<SystemTestUserOptionVo> listTestUserOptions() {
+        List<SystemTestUserOptionVo> options = systemUserMapper.selectTestUserOptions();
+        return options == null ? Collections.emptyList() : options;
     }
 
     @Override
@@ -471,7 +478,10 @@ public class SystemUserServiceImpl extends BaseServiceImpl implements SystemUser
             operator = systemUserMapper.selectOperatorById(userId);
         }
         if (operator == null && StringUtils.hasText(subject)) {
-            String value = subject.trim();
+            String value = trimToNull(subject);
+            if (!StringUtils.hasText(value)) {
+                throw new BusinessException(ResultCode.UNAUTHORIZED);
+            }
             if (value.matches("^\\d+$")) {
                 operator = systemUserMapper.selectOperatorById(Long.parseLong(value));
             } else {

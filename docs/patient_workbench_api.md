@@ -149,7 +149,7 @@
 | 20 | 设备使用详情查询 | GET | /api/monitor/device/detail |
 | 21 | 设备维护记录分页查询 | GET | /api/monitor/device/maintain-records |
 | 22 | 质控记录分页查询 | POST | /api/monitor/quality-control/page |
-| 23 | 质控筛选字典枚举 | GET | /api/monitor/quality-control/dicts |
+| 23 | 质控公共字典枚举 | GET | /api/monitor/quality-control/dicts |
 | 24 | 新增质控记录 | POST | /api/monitor/quality-control |
 | 25 | 编辑质控记录 | PUT | /api/monitor/quality-control |
 | 26 | 删除质控记录 | DELETE | /api/monitor/quality-control |
@@ -202,6 +202,8 @@
 | 73 | 单条诊断报告详情查询 | GET | /api/analysis/diagnosis-report/{reportId} |
 | 74 | 诊断报告PDF下载 | GET | /api/analysis/diagnosis-report/{reportId}/pdf |
 | 75 | 患者公共筛选字典 | GET | /api/patient/dicts |
+| 76 | 质控设备下拉列表 | GET | /api/monitor/quality-control/device-options |
+| 77 | 测试人员下拉列表 | GET | /api/sys/user/testUserOptions |
 
 ---
 
@@ -2199,7 +2201,7 @@ Authorization: Bearer <token>
 | 项 | 内容 |
 |---|---|
 | 接口名称 | 质控记录分页查询 |
-| 业务作用 | 渲染质控记录列表，支持设备、结果状态、时间范围筛选 |
+| 业务作用 | 渲染质控记录列表，支持设备、测试类型、测试结果、设备状态、时间范围筛选 |
 | 请求路径 | /api/monitor/quality-control/page |
 | 请求方式 | POST |
 | Content-Type | application/json |
@@ -2210,8 +2212,9 @@ Authorization: Bearer <token>
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |---|---|---|---|---|
 | deviceId | long | 否 | 空 | 设备ID |
-| status | string | 否 | 空 | 质控结果（通过/未通过 或 1/2） |
 | testType | string | 否 | 空 | 测试类型（日检/周检/月检/远程检测 或 1/2/3/4） |
+| testResult | string | 否 | 空 | 测试结果（通过/未通过 或 1/2） |
+| deviceStatus | string | 否 | 空 | 设备状态（正常/异常 或 1/2） |
 | startTime | string | 否 | 空 | 起始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
 | endTime | string | 否 | 空 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
 | pageNum | long | 否 | 1 | 页码 |
@@ -2226,6 +2229,7 @@ data.records[] 字段：
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | qcId | long | 质控记录ID |
+| qcNo | string | 质控单号（示例：QC2804） |
 | deviceId | long | 设备ID |
 | deviceName | string | 设备名称 |
 | deptId | long | 病区ID |
@@ -2239,6 +2243,7 @@ data.records[] 字段：
 | remark | string | 备注 |
 | createTime | string | 创建时间 |
 | updateTime | string | 更新时间 |
+| actionPermissions | array | 操作按钮权限（detail/update/delete） |
 
 ### 18.1.4 请求示例
 
@@ -2251,7 +2256,8 @@ Content-Type: application/json
 {
   "deviceId": 1804,
   "testType": "周检",
-  "status": "未通过",
+  "testResult": "未通过",
+  "deviceStatus": "异常",
   "startTime": "2026-04-18",
   "endTime": "2026-04-18",
   "pageNum": 1,
@@ -2273,6 +2279,7 @@ Content-Type: application/json
     "records": [
       {
         "qcId": 2804,
+        "qcNo": "QC2804",
         "deviceId": 1804,
         "deviceName": "ICU多参数监护仪",
         "deptId": 1203,
@@ -2285,7 +2292,12 @@ Content-Type: application/json
         "testResult": "未通过",
         "remark": "已记录维修工单，待复检",
         "createTime": "2026-04-18T07:45:00",
-        "updateTime": "2026-04-18T07:45:00"
+        "updateTime": "2026-04-18T07:45:00",
+        "actionPermissions": [
+          "monitor:quality:detail",
+          "monitor:quality:update",
+          "monitor:quality:delete"
+        ]
       }
     ]
   },
@@ -2295,14 +2307,14 @@ Content-Type: application/json
 
 ---
 
-## 18.2 质控筛选字典枚举
+## 18.2 质控公共字典枚举
 
 ### 18.2.1 接口信息
 
 | 项 | 内容 |
 |---|---|
-| 接口名称 | 质控筛选字典枚举 |
-| 业务作用 | 页面初始化渲染设备下拉、测试状态、测试类型字典 |
+| 接口名称 | 质控公共字典枚举 |
+| 业务作用 | 页面初始化渲染测试类型、设备状态、测试结果字典 |
 | 请求路径 | /api/monitor/quality-control/dicts |
 | 请求方式 | GET |
 | Content-Type | application/json |
@@ -2316,9 +2328,10 @@ Content-Type: application/json
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| deviceOptions | array | 设备字典 |
-| testStatusOptions | array | 测试结果字典 |
 | testTypeOptions | array | 测试类型字典 |
+| deviceStatusOptions | array | 设备状态字典 |
+| testResultOptions | array | 测试结果字典 |
+| testStatusOptions | array | 兼容字段，等同 testResultOptions |
 
 字典项结构：
 
@@ -2342,21 +2355,27 @@ Authorization: Bearer <token>
   "code": 0,
   "message": "成功",
   "data": {
-    "deviceOptions": [
-      { "value": "", "label": "全部设备" },
-      { "value": "1804", "label": "ICU多参数监护仪 (DEV-MON-004)" }
-    ],
-    "testStatusOptions": [
-      { "value": "", "label": "全部状态" },
-      { "value": "1", "label": "通过" },
-      { "value": "2", "label": "未通过" }
-    ],
     "testTypeOptions": [
       { "value": "", "label": "全部类型" },
       { "value": "1", "label": "日检" },
       { "value": "2", "label": "周检" },
       { "value": "3", "label": "月检" },
       { "value": "4", "label": "远程检测" }
+    ],
+    "deviceStatusOptions": [
+      { "value": "", "label": "全部状态" },
+      { "value": "1", "label": "正常" },
+      { "value": "2", "label": "异常" }
+    ],
+    "testResultOptions": [
+      { "value": "", "label": "全部结果" },
+      { "value": "1", "label": "通过" },
+      { "value": "2", "label": "未通过" }
+    ],
+    "testStatusOptions": [
+      { "value": "", "label": "全部结果" },
+      { "value": "1", "label": "通过" },
+      { "value": "2", "label": "未通过" }
     ]
   },
   "timestamp": 1776501256203
@@ -2549,6 +2568,7 @@ Content-Type: application/json
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | qcId | long | 质控记录ID |
+| qcNo | string | 质控单号（示例：QC2804） |
 | deviceId | long | 设备ID |
 | deviceName | string | 设备名称 |
 | deptId | long | 病区ID |
@@ -2562,6 +2582,10 @@ Content-Type: application/json
 | remark | string | 备注 |
 | createTime | string | 创建时间 |
 | updateTime | string | 更新时间 |
+| deviceInfo | object | 设备信息快照 |
+| testerInfo | object | 测试人员快照 |
+| qualityParams | object | 全部质控参数 |
+| timeSnapshot | object | 时间快照 |
 | indicatorDetails | array | 测试指标明细 |
 
 indicatorDetails[] 字段：
@@ -2572,6 +2596,39 @@ indicatorDetails[] 字段：
 | indicatorName | string | 指标名称 |
 | indicatorValue | string | 指标值 |
 | result | string | 指标结果 |
+
+deviceInfo 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| deviceId | long | 设备ID |
+| deviceName | string | 设备名称 |
+| deptId | long | 科室ID |
+| deptName | string | 科室名称 |
+| deviceStatus | string | 设备状态 |
+
+testerInfo 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| testUserId | long | 测试人员ID |
+| testUserName | string | 测试人员姓名 |
+
+qualityParams 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| testType | string | 测试类型 |
+| deviceStatus | string | 设备状态 |
+| testResult | string | 测试结果 |
+
+timeSnapshot 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| testTime | string | 测试时间 |
+| createTime | string | 创建时间 |
+| updateTime | string | 更新时间 |
 
 ### 18.5.4 请求示例
 
@@ -2589,6 +2646,7 @@ Authorization: Bearer <token>
   "message": "成功",
   "data": {
     "qcId": 2804,
+    "qcNo": "QC2804",
     "deviceId": 1804,
     "deviceName": "ICU多参数监护仪",
     "deptId": 1203,
@@ -2602,7 +2660,32 @@ Authorization: Bearer <token>
     "remark": "已记录维修工单，待复检",
     "createTime": "2026-04-18T07:45:00",
     "updateTime": "2026-04-18T07:45:00",
+    "deviceInfo": {
+      "deviceId": 1804,
+      "deviceName": "ICU多参数监护仪",
+      "deptId": 1203,
+      "deptName": "心血管内科二病区",
+      "deviceStatus": "异常"
+    },
+    "testerInfo": {
+      "testUserId": 1305,
+      "testUserName": "吴工程师"
+    },
+    "qualityParams": {
+      "testType": "周检",
+      "deviceStatus": "异常",
+      "testResult": "未通过"
+    },
+    "timeSnapshot": {
+      "testTime": "2026-04-18T07:45:00",
+      "createTime": "2026-04-18T07:45:00",
+      "updateTime": "2026-04-18T07:45:00"
+    },
     "indicatorDetails": [
+      { "indicatorCode": "qc_no", "indicatorName": "质控单号", "indicatorValue": "QC2804", "result": "已生成" },
+      { "indicatorCode": "device_name", "indicatorName": "设备名称", "indicatorValue": "ICU多参数监护仪", "result": "已绑定" },
+      { "indicatorCode": "dept_name", "indicatorName": "所属科室", "indicatorValue": "心血管内科二病区", "result": "已归属" },
+      { "indicatorCode": "test_user", "indicatorName": "测试人员", "indicatorValue": "吴工程师", "result": "已记录" },
       { "indicatorCode": "device_status", "indicatorName": "设备状态", "indicatorValue": "异常", "result": "异常" },
       { "indicatorCode": "test_result", "indicatorName": "测试结果", "indicatorValue": "未通过", "result": "未通过" },
       { "indicatorCode": "test_type", "indicatorName": "测试类型", "indicatorValue": "周检", "result": "已执行" },
@@ -2665,6 +2748,121 @@ Authorization: Bearer <token>
 
 ---
 
+## 18.7 设备下拉列表
+
+### 18.7.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 设备下拉列表 |
+| 业务作用 | 返回所有正常状态设备下拉选项（设备ID + 设备名称） |
+| 请求路径 | /api/monitor/quality-control/device-options |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | monitor:quality:device-options:read |
+
+### 18.7.2 请求入参
+
+无业务入参。
+
+### 18.7.3 出参说明
+
+data 为数组，元素字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| value | string | 设备ID |
+| label | string | 设备名称 |
+
+### 18.7.4 请求示例
+
+```http
+GET /api/monitor/quality-control/device-options HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+```
+
+### 18.7.5 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": [
+    {
+      "value": "1801",
+      "label": "心电图机 ECG-2000"
+    },
+    {
+      "value": "1804",
+      "label": "ICU多参数监护仪"
+    }
+  ],
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 18.8 测试人员下拉
+
+### 18.8.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 测试人员下拉 |
+| 业务作用 | 页面“测试工号”下拉选择，返回启用状态系统用户 |
+| 请求路径 | /api/sys/user/testUserOptions |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | system:user:options:read |
+
+### 18.8.2 请求入参
+
+无业务入参。
+
+### 18.8.3 出参说明
+
+data 为数组，元素字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| userId | long | 用户ID |
+| userName | string | 工号/账号 |
+| realName | string | 姓名 |
+
+### 18.8.4 请求示例
+
+```http
+GET /api/sys/user/testUserOptions HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+```
+
+### 18.8.5 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": [
+    {
+      "userId": 1001,
+      "userName": "ADMIN001",
+      "realName": "系统管理员"
+    },
+    {
+      "userId": 1002,
+      "userName": "TEST002",
+      "realName": "李医生"
+    }
+  ],
+  "timestamp": 1776501256203
+}
+```
+
+---
+
 ## 19. 质控管理业务规则
 
 1. 质控记录采用逻辑删除模型（is_deleted），提供新增、编辑、查询、删除接口；删除后记录不再参与查询。
@@ -2673,8 +2871,10 @@ Authorization: Bearer <token>
 4. deviceStatus 与 testResult 支持中文枚举与数字编码双输入，统一落库为中文值（正常/异常、通过/未通过）。
 5. testUserId 传入时，测试人员姓名优先以系统用户表反查结果为准；testUserId 不传时，testUserName 必填。
 6. testTime 支持日期与日期时间两种输入，传日期时自动补齐到当天起始或结束时间用于查询边界。
-7. remark 最大长度 256，超过长度返回 400。
-8. 详情接口返回 indicatorDetails 指标明细，保证前端详情页可直接渲染“完整档案 + 指标列表”。
+7. 设备下拉接口仅返回 ecg_device.device_status=1 且 is_deleted=0 的设备数据。
+8. 测试人员下拉接口仅返回 sys_user.status=1 且 is_deleted=0 的用户数据。
+9. remark 最大长度 256，超过长度返回 400。
+10. 详情接口返回 indicatorDetails + qualityParams + timeSnapshot，保证前端可直接渲染“完整档案 + 指标明细 + 时间快照”。
 
 ## 20. 质控管理错误场景
 
@@ -2684,7 +2884,7 @@ Authorization: Bearer <token>
 | deviceId 为空或非法 | 400 | deviceId 参数不合法 |
 | testType 传入非法值 | 400 | testType 参数不合法 |
 | deviceStatus 传入非法值 | 400 | deviceStatus 参数不合法 |
-| testResult/status 传入非法值 | 400 | testResult 参数不合法 / status 参数不合法 |
+| testResult 传入非法值 | 400 | testResult 参数不合法 |
 | testUserId 传入非法值 | 400 | testUserId 参数不合法 |
 | testUserName 缺失 | 400 | testUserName 参数不合法 |
 | testTime/startTime/endTime 格式错误 | 400 | testTime 参数格式错误 |

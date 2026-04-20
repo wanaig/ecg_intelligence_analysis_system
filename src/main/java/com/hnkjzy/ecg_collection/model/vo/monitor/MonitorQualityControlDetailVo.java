@@ -15,6 +15,7 @@ import java.util.List;
 public class MonitorQualityControlDetailVo extends BaseVo {
 
     private Long qcId;
+    private String qcNo;
     private Long deviceId;
     private String deviceName;
     private Long deptId;
@@ -28,5 +29,10 @@ public class MonitorQualityControlDetailVo extends BaseVo {
     private String remark;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+
+    private MonitorQualityControlDeviceSnapshotVo deviceInfo;
+    private MonitorQualityControlTesterSnapshotVo testerInfo;
+    private MonitorQualityControlParamVo qualityParams;
+    private MonitorQualityControlTimeSnapshotVo timeSnapshot;
     private List<MonitorQualityControlIndicatorVo> indicatorDetails;
 }
