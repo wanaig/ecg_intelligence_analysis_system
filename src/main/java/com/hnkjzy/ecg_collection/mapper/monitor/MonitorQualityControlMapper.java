@@ -32,6 +32,8 @@ public interface MonitorQualityControlMapper extends BaseMapperX<EcgDeviceQualit
 
     String selectUserNameById(@Param("userId") Long userId);
 
+    Long selectMaxQcIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
     int insertQualityControl(EcgDeviceQualityControlEntity entity);
 
     int updateQualityControlById(EcgDeviceQualityControlEntity entity);

@@ -14,6 +14,12 @@ public class SystemDepartmentDetailVo extends BaseVo {
     private String deptName;
     private Long parentDeptId;
     private String parentDeptName;
+
+    private Integer deptType;
+    private String deptTypeText;
+    private String director;
+    private String phone;
+
     private Integer deptLevel;
     private String deptLevelText;
     private String deptDirector;

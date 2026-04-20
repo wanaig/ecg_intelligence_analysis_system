@@ -1,7 +1,6 @@
 package com.hnkjzy.ecg_collection.service.impl.monitor;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
@@ -43,6 +42,8 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
     private static final long DEFAULT_PAGE_NUM = 1L;
     private static final long DEFAULT_PAGE_SIZE = 10L;
     private static final long MAX_PAGE_SIZE = 200L;
+    private static final long QC_ID_BASE = 2800L;
+    private static final long QC_ID_MAX_ALLOWED = 9_999_999_999L;
 
     private static final DateTimeFormatter STANDARD_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -128,9 +129,10 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         Long deviceId = requirePositiveId(createDto.getDeviceId(), "deviceId 参数不合法");
         MonitorQualityControlDeviceInfoVo deviceInfo = requireDeviceInfo(deviceId);
         Long testUserId = createDto.getTestUserId() == null ? null : requirePositiveId(createDto.getTestUserId(), "testUserId 参数不合法");
+        Long qcId = nextQcId();
 
         EcgDeviceQualityControlEntity entity = new EcgDeviceQualityControlEntity();
-        entity.setQcId(IdWorker.getId());
+        entity.setQcId(qcId);
         entity.setDeviceId(deviceInfo.getDeviceId());
         entity.setDeviceName(deviceInfo.getDeviceName());
         entity.setDeptId(deviceInfo.getDeptId());
@@ -471,5 +473,14 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
             return null;
         }
         return value.trim();
+    }
+
+    private Long nextQcId() {
+        Long maxQcId = monitorQualityControlMapper.selectMaxQcIdInRangeForUpdate(QC_ID_MAX_ALLOWED);
+        long base = maxQcId == null ? QC_ID_BASE : maxQcId;
+        if (base >= QC_ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "质控记录ID已达到上限，请联系管理员");
+        }
+        return base + 1;
     }
 }

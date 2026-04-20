@@ -35,6 +35,24 @@
         </if>
     </select>
 
+    <select id="selectMaxRoleIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT r.role_id
+        FROM sys_role r
+        WHERE r.role_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY r.role_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <select id="selectMaxRolePermissionIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT rp.id
+        FROM sys_role_permission rp
+        WHERE rp.id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY rp.id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     <insert id="insertRole" parameterType="com.hnkjzy.ecg_collection.model.entity.system.SysRoleEntity">
         INSERT INTO sys_role (
             role_id,

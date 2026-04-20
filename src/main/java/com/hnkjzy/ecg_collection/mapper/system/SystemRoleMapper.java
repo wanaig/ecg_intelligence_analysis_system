@@ -24,6 +24,10 @@ public interface SystemRoleMapper extends BaseMapperX<SysRoleEntity> {
 
     Long countRoleName(@Param("roleName") String roleName, @Param("excludeRoleId") Long excludeRoleId);
 
+    Long selectMaxRoleIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
+    Long selectMaxRolePermissionIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
     int insertRole(SysRoleEntity entity);
 
     int updateRoleById(SysRoleEntity entity);

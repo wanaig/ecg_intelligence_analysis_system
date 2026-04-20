@@ -4,6 +4,112 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hnkjzy.ecg_collection.mapper.monitor.MonitorMapper">
 
+    <select id="selectOverviewStat" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorOverviewStatVo">
+        SELECT
+            COALESCE(SUM(CASE
+                             WHEN c.collection_start_time <![CDATA[>=]]> CURDATE()
+                                 AND c.collection_start_time <![CDATA[<]]> DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+                                 THEN 1
+                             ELSE 0
+                END), 0) AS todayCollect,
+            COALESCE(SUM(CASE
+                             WHEN c.ai_analysis_status IN (0, 1) THEN 1
+                             ELSE 0
+                END), 0) AS pendingAnalyse,
+            (
+                SELECT COALESCE(COUNT(1), 0)
+                FROM ecg_diagnosis_report r
+                WHERE r.is_deleted = 0
+                  AND r.report_status = 1
+            ) AS pendingAudit,
+            (
+                SELECT COALESCE(COUNT(1), 0)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+            ) AS alertCount
+        FROM ecg_collection_record c
+        WHERE c.is_deleted = 0
+    </select>
+
+    <select id="selectRealTimeList" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorPatientListItemVo">
+        SELECT
+            m.patient_id AS patientId,
+            m.patient_name AS patientName,
+            CONCAT(COALESCE(m.dept_name, '未知病区'), ' | ', COALESCE(m.bed_no, '--')) AS wardBed,
+            m.current_heart_rate AS heartRate,
+            CASE m.monitor_status
+                WHEN 1 THEN '正常'
+                WHEN 2 THEN '预警'
+                ELSE '正常'
+            END AS status,
+            DATE_FORMAT(m.latest_update_time, '%Y-%m-%d %H:%i:%s') AS updateTime
+        FROM ecg_real_time_monitor m
+        WHERE m.is_deleted = 0
+          AND m.is_key_monitor = 0
+          AND m.monitor_status IN (1, 2)
+        <if test="req != null and req.wardId != null">
+            AND m.dept_id = #{req.wardId}
+        </if>
+        <if test="req != null and req.level != null">
+            AND m.warning_level = #{req.level}
+        </if>
+        ORDER BY CASE m.monitor_status
+                     WHEN 2 THEN 1
+                     ELSE 2
+                 END,
+                 m.latest_update_time DESC,
+                 m.monitor_id DESC
+    </select>
+
+    <select id="selectKeyList" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorPatientListItemVo">
+        SELECT
+            m.patient_id AS patientId,
+            m.patient_name AS patientName,
+            CONCAT(COALESCE(m.dept_name, '未知病区'), ' | ', COALESCE(m.bed_no, '--')) AS wardBed,
+            m.current_heart_rate AS heartRate,
+            CASE m.monitor_status
+                WHEN 1 THEN '正常'
+                WHEN 2 THEN '预警'
+                ELSE '正常'
+            END AS status,
+            DATE_FORMAT(m.latest_update_time, '%Y-%m-%d %H:%i:%s') AS updateTime
+        FROM ecg_real_time_monitor m
+        WHERE m.is_deleted = 0
+          AND m.is_key_monitor = 1
+          AND m.monitor_status IN (1, 2)
+        ORDER BY CASE m.monitor_status
+                     WHEN 2 THEN 1
+                     ELSE 2
+                 END,
+                 m.latest_update_time DESC,
+                 m.monitor_id DESC
+    </select>
+
+    <select id="selectDeptStat" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorDeptStatItemVo">
+        SELECT
+            COALESCE(m.dept_name, '未知病区') AS deptName,
+            COUNT(1) AS patientCount
+        FROM ecg_real_time_monitor m
+        WHERE m.is_deleted = 0
+        GROUP BY m.dept_name
+        ORDER BY patientCount DESC, deptName ASC
+    </select>
+
+    <select id="countMonitorPatient" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ecg_real_time_monitor m
+        WHERE m.patient_id = #{patientId}
+          AND m.is_deleted = 0
+    </select>
+
+    <update id="updateKeyMonitorFlag">
+        UPDATE ecg_real_time_monitor
+        SET is_key_monitor = #{isKeyMonitor},
+            update_time = NOW()
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
+
     <select id="selectGlobalStat" resultType="com.hnkjzy.ecg_collection.model.vo.monitor.MonitorGlobalStatVo">
         SELECT
             COALESCE(SUM(CASE

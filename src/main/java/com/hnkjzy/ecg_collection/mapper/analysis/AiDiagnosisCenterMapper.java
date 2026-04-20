@@ -29,6 +29,8 @@ public interface AiDiagnosisCenterMapper {
 
     AiDiagnosisAuditBaseVo selectAuditBase(@Param("diagnosisId") String diagnosisId);
 
+    Long selectMaxReportIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
     int insertAuditReport(@Param("reportId") Long reportId,
                           @Param("reportNo") String reportNo,
                           @Param("ecgId") Long ecgId,

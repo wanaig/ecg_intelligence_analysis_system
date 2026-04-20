@@ -624,6 +624,7 @@ CREATE TABLE `ecg_real_time_monitor` (
                                          `monitor_status` TINYINT NOT NULL DEFAULT 1 COMMENT '监护状态：1-正常 2-预警 3-离线',
                                          `is_abnormal` TINYINT NOT NULL DEFAULT 0 COMMENT '是否异常：0-正常 1-异常',
                                          `warning_level` TINYINT NOT NULL DEFAULT 0 COMMENT '预警级别：0-正常 1-低危 2-中危 3-高危',
+                                         `is_key_monitor` TINYINT NOT NULL DEFAULT 0 COMMENT '是否重点监护：0-否 1-是',
                                          `latest_update_time` DATETIME NOT NULL COMMENT '最新数据更新时间',
                                          `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                          `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

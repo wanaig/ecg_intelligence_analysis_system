@@ -1,7 +1,6 @@
 package com.hnkjzy.ecg_collection.service.impl.monitor;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
@@ -46,6 +45,8 @@ public class MonitorDeviceServiceImpl extends BaseServiceImpl implements Monitor
     private static final long DEFAULT_PAGE_NUM = 1L;
     private static final long DEFAULT_PAGE_SIZE = 10L;
     private static final long MAX_PAGE_SIZE = 200L;
+    private static final long DEVICE_ID_BASE = 1800L;
+    private static final long DEVICE_ID_MAX_ALLOWED = 9_999_999_999L;
 
     private final MonitorDeviceMapper monitorDeviceMapper;
 
@@ -109,9 +110,10 @@ public class MonitorDeviceServiceImpl extends BaseServiceImpl implements Monitor
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "请求体不能为空");
         }
 
+        Long deviceId = nextDeviceId();
         EcgDeviceEntity entity = new EcgDeviceEntity();
-        entity.setDeviceId(IdWorker.getId());
-        entity.setDeviceCode(resolveDeviceCode(createDto.getDeviceCode(), null, true));
+        entity.setDeviceId(deviceId);
+        entity.setDeviceCode(resolveDeviceCode(createDto.getDeviceCode(), null, true, deviceId));
         entity.setDeviceName(requireText(createDto.getDeviceName(), "deviceName 参数不合法"));
         entity.setDeviceType(parseDeviceType(createDto.getDeviceType(), true, "deviceType"));
         entity.setDeviceModel(trimToNull(createDto.getDeviceModel()));
@@ -148,7 +150,7 @@ public class MonitorDeviceServiceImpl extends BaseServiceImpl implements Monitor
         if (!StringUtils.hasText(finalDeviceCode)) {
             finalDeviceCode = existing.getDeviceCode();
         }
-        entity.setDeviceCode(resolveDeviceCode(finalDeviceCode, updateDto.getDeviceId(), false));
+        entity.setDeviceCode(resolveDeviceCode(finalDeviceCode, updateDto.getDeviceId(), false, null));
         entity.setDeviceName(requireText(updateDto.getDeviceName(), "deviceName 参数不合法"));
         entity.setDeviceType(parseDeviceType(updateDto.getDeviceType(), true, "deviceType"));
         entity.setDeviceModel(trimToNull(updateDto.getDeviceModel()));
@@ -331,10 +333,10 @@ public class MonitorDeviceServiceImpl extends BaseServiceImpl implements Monitor
         }
     }
 
-    private String resolveDeviceCode(String inputCode, Long excludeDeviceId, boolean autoGenerateWhenBlank) {
+    private String resolveDeviceCode(String inputCode, Long excludeDeviceId, boolean autoGenerateWhenBlank, Long autoDeviceId) {
         String code = trimToNull(inputCode);
         if (code == null && autoGenerateWhenBlank) {
-            code = "DEV-AUTO-" + IdWorker.getId();
+            code = "DEV-AUTO-" + autoDeviceId;
         }
         if (code == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "deviceCode 参数不合法");
@@ -344,6 +346,15 @@ public class MonitorDeviceServiceImpl extends BaseServiceImpl implements Monitor
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "deviceCode 已存在");
         }
         return code;
+    }
+
+    private Long nextDeviceId() {
+        Long maxDeviceId = monitorDeviceMapper.selectMaxDeviceIdInRangeForUpdate(DEVICE_ID_MAX_ALLOWED);
+        long base = maxDeviceId == null ? DEVICE_ID_BASE : maxDeviceId;
+        if (base >= DEVICE_ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "设备ID已达到上限，请联系管理员");
+        }
+        return base + 1;
     }
 
     private String resolveWardName(Long wardId, String wardName) {

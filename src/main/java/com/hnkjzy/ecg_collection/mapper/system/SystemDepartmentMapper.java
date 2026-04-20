@@ -21,6 +21,8 @@ public interface SystemDepartmentMapper extends BaseMapperX<SysDepartmentEntity>
 
     List<SystemDepartmentTreeItemVo> selectDepartmentTreeList();
 
+    List<SystemDepartmentTreeItemVo> selectDepartmentTreeAll();
+
     Long countDepartmentName(@Param("deptName") String deptName,
                              @Param("parentDeptId") Long parentDeptId,
                              @Param("excludeDeptId") Long excludeDeptId);
@@ -28,6 +30,8 @@ public interface SystemDepartmentMapper extends BaseMapperX<SysDepartmentEntity>
     String selectDepartmentNameById(@Param("deptId") Long deptId);
 
     String selectDepartmentCodeById(@Param("deptId") Long deptId);
+
+    Long selectMaxDepartmentIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
 
     Long selectMaxSortByParent(@Param("parentDeptId") Long parentDeptId);
 
@@ -43,9 +47,14 @@ public interface SystemDepartmentMapper extends BaseMapperX<SysDepartmentEntity>
 
     Long countUsersByDepartmentId(@Param("deptId") Long deptId);
 
+    Long countBedsByDepartmentId(@Param("deptId") Long deptId);
+
     Long countDevicesByDepartmentId(@Param("deptId") Long deptId);
 
     int logicalDeleteDepartment(@Param("deptId") Long deptId);
+
+    int updateDepartmentStatusById(@Param("deptId") Long deptId,
+                                   @Param("status") Integer status);
 
     int updateDirectorUserByDeptId(@Param("deptId") Long deptId,
                                    @Param("deptDirector") String deptDirector,

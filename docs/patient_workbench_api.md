@@ -135,72 +135,73 @@
 | 6 | 预警单条详情 | GET | /api/warning/detail |
 | 7 | 提交处理预警 | POST | /api/warning/handle |
 | 8 | 预警筛选字典枚举 | GET | /api/warning/dicts |
-| 9 | 实时监护全局顶部统计 | GET | /api/monitor/statistics |
-| 10 | 实时监护大屏患者数据 | GET | /api/monitor/patients |
-| 11 | 实时监护科室分布统计 | GET | /api/monitor/ward-distribution |
-| 12 | AI 诊断准确率 | GET | /api/monitor/ai-accuracy |
-| 13 | 单患者监护详情扩展 | GET | /api/monitor/detail |
-| 14 | 设备分页列表查询 | POST | /api/monitor/device/page |
-| 15 | 设备筛选字典枚举 | GET | /api/monitor/device/dicts |
-| 16 | 新增设备 | POST | /api/monitor/device |
-| 17 | 编辑设备 | PUT | /api/monitor/device |
-| 18 | 删除设备 | DELETE | /api/monitor/device |
-| 19 | 设备使用详情查询 | GET | /api/monitor/device/detail |
-| 20 | 设备维护记录分页查询 | GET | /api/monitor/device/maintain-records |
-| 21 | 质控记录分页查询 | POST | /api/monitor/quality-control/page |
-| 22 | 质控筛选字典枚举 | GET | /api/monitor/quality-control/dicts |
-| 23 | 新增质控记录 | POST | /api/monitor/quality-control |
-| 24 | 编辑质控记录 | PUT | /api/monitor/quality-control |
-| 25 | 删除质控记录 | DELETE | /api/monitor/quality-control |
-| 26 | 质控记录详情查询 | GET | /api/monitor/quality-control/detail |
-| 27 | 核心大盘指标 | GET | /api/analysis/core-metrics |
-| 28 | 病区心电测量统计 | GET | /api/analysis/ward-ecg-stats |
-| 29 | 预警维度统计 | GET | /api/analysis/warning-dimensions |
-| 30 | 报告与设备统计 | GET | /api/analysis/report-device-stats |
-| 31 | 数据分析筛选字典 | GET | /api/analysis/dicts |
-| 32 | 用户分页列表查询 | POST | /api/system/user/page |
-| 33 | 用户筛选字典接口 | GET | /api/system/user/dicts |
-| 34 | 新增用户 | POST | /api/system/user |
-| 35 | 查询用户单条详情 | GET | /api/system/user/detail |
-| 36 | 编辑用户信息 | PUT | /api/system/user |
-| 37 | 删除用户 | DELETE | /api/system/user |
-| 38 | 重置用户密码 | POST | /api/system/user/reset-password |
-| 39 | 角色分页列表查询 | POST | /api/system/role/page |
-| 40 | 新增角色 | POST | /api/system/role |
-| 41 | 角色详情查询 | GET | /api/system/role/detail |
-| 42 | 编辑角色 | PUT | /api/system/role |
-| 43 | 删除角色 | DELETE | /api/system/role |
-| 44 | 查询角色已有权限 | GET | /api/system/role/permissions |
-| 45 | 保存角色权限分配 | POST | /api/system/role/permissions |
-| 46 | 科室分页列表查询 | POST | /api/system/department/page |
-| 47 | 科室公共字典接口 | GET | /api/system/department/dicts |
-| 48 | 新增科室 | POST | /api/system/department |
-| 49 | 科室详情查询 | GET | /api/system/department/detail |
-| 50 | 编辑科室 | PUT | /api/system/department |
-| 51 | 删除科室 | DELETE | /api/system/department |
-| 52 | 工作台全局概览统计 | GET | /api/workbench/overview |
-| 53 | 待处理预警分页列表 | POST | /api/workbench/pending-alerts/page |
-| 54 | 最新心电记录分页查询 | POST | /api/workbench/latest-ecg/page |
-| 55 | 预警详情查询 | GET | /api/workbench/alerts/{alertId} |
-| 56 | 单条心电数据详情 | GET | /api/workbench/ecg/{ecgId} |
-| 57 | 工作台公共筛选字典 | GET | /api/workbench/dicts |
-| 58 | 心电数据分页列表查询 | POST | /api/ecg-data/page |
-| 59 | 心电数据上传 | POST | /api/ecg-data/upload |
-| 60 | 心电数据详情查询 | GET | /api/ecg-data/{ecgId} |
-| 61 | 心电数据状态更新 | PUT | /api/ecg-data/status |
-| 62 | 心电数据筛选字典 | GET | /api/ecg-data/dicts |
-| 63 | 原始心电波形数据获取 | GET | /api/ecg-data/{ecgId}/waveform |
-| 64 | AI诊断全局统计概览 | GET | /api/analysis/ai-diagnosis/overview |
-| 65 | AI诊断记录分页查询 | POST | /api/analysis/ai-diagnosis/page |
-| 66 | AI诊断审核状态字典 | GET | /api/analysis/ai-diagnosis/dicts |
-| 67 | AI诊断详情查询 | GET | /api/analysis/ai-diagnosis/{diagnosisId} |
-| 68 | AI诊断原始心电波形数据 | GET | /api/analysis/ai-diagnosis/ecg/{ecgId}/waveform |
-| 69 | 医生审核提交 | POST | /api/analysis/ai-diagnosis/audit |
-| 70 | 诊断报告分页列表查询 | POST | /api/analysis/diagnosis-report/page |
-| 71 | 诊断报告筛选字典 | GET | /api/analysis/diagnosis-report/dicts |
-| 72 | 单条诊断报告详情查询 | GET | /api/analysis/diagnosis-report/{reportId} |
-| 73 | 诊断报告PDF下载 | GET | /api/analysis/diagnosis-report/{reportId}/pdf |
-| 74 | 患者公共筛选字典 | GET | /api/patient/dicts |
+| 9 | 实时监护全局顶部统计 | GET | /api/monitor/statistics（兼容 /api/monitor/overview/stat） |
+| 10 | 实时监护大屏患者数据 | GET | /api/monitor/patients（兼容 /api/monitor/realTime/list） |
+| 11 | 重点监护患者列表查询 | GET | /api/monitor/key/list |
+| 12 | 实时监护科室分布统计 | GET | /api/monitor/ward-distribution（兼容 /api/monitor/dept/stat） |
+| 13 | 加入重点监护 | POST | /api/monitor/opt/addKey |
+| 14 | 解除重点监护 | POST | /api/monitor/opt/cancelKey |
+| 15 | 设备分页列表查询 | POST | /api/monitor/device/page |
+| 16 | 设备筛选字典枚举 | GET | /api/monitor/device/dicts |
+| 17 | 新增设备 | POST | /api/monitor/device |
+| 18 | 编辑设备 | PUT | /api/monitor/device |
+| 19 | 删除设备 | DELETE | /api/monitor/device |
+| 20 | 设备使用详情查询 | GET | /api/monitor/device/detail |
+| 21 | 设备维护记录分页查询 | GET | /api/monitor/device/maintain-records |
+| 22 | 质控记录分页查询 | POST | /api/monitor/quality-control/page |
+| 23 | 质控筛选字典枚举 | GET | /api/monitor/quality-control/dicts |
+| 24 | 新增质控记录 | POST | /api/monitor/quality-control |
+| 25 | 编辑质控记录 | PUT | /api/monitor/quality-control |
+| 26 | 删除质控记录 | DELETE | /api/monitor/quality-control |
+| 27 | 质控记录详情查询 | GET | /api/monitor/quality-control/detail |
+| 28 | 核心大盘指标 | GET | /api/analysis/core-metrics |
+| 29 | 病区心电测量统计 | GET | /api/analysis/ward-ecg-stats |
+| 30 | 预警维度统计 | GET | /api/analysis/warning-dimensions |
+| 31 | 报告与设备统计 | GET | /api/analysis/report-device-stats |
+| 32 | 数据分析筛选字典 | GET | /api/analysis/dicts |
+| 33 | 用户分页列表查询 | POST | /api/system/user/page |
+| 34 | 用户筛选字典接口 | GET | /api/system/user/dicts |
+| 35 | 新增用户 | POST | /api/system/user |
+| 36 | 查询用户单条详情 | GET | /api/system/user/detail |
+| 37 | 编辑用户信息 | PUT | /api/system/user |
+| 38 | 删除用户 | DELETE | /api/system/user |
+| 39 | 重置用户密码 | POST | /api/system/user/reset-password |
+| 40 | 角色分页列表查询 | POST | /api/system/role/page |
+| 41 | 新增角色 | POST | /api/system/role |
+| 42 | 角色详情查询 | GET | /api/system/role/detail |
+| 43 | 编辑角色 | PUT | /api/system/role |
+| 44 | 删除角色 | DELETE | /api/system/role |
+| 45 | 查询角色已有权限 | GET | /api/system/role/permissions |
+| 46 | 保存角色权限分配 | POST | /api/system/role/permissions |
+| 47 | 科室分页列表查询 | POST | /api/system/department/page |
+| 48 | 上级科室树形下拉 | GET | /api/system/department/tree |
+| 49 | 新增科室 | POST | /api/system/department |
+| 50 | 科室详情查询 | GET | /api/system/department/detail |
+| 51 | 编辑科室 | PUT | /api/system/department |
+| 52 | 删除科室 | DELETE | /api/system/department |
+| 53 | 工作台全局概览统计 | GET | /api/workbench/overview |
+| 54 | 待处理预警分页列表 | POST | /api/workbench/pending-alerts/page |
+| 55 | 最新心电记录分页查询 | POST | /api/workbench/latest-ecg/page |
+| 56 | 预警详情查询 | GET | /api/workbench/alerts/{alertId} |
+| 57 | 单条心电数据详情 | GET | /api/workbench/ecg/{ecgId} |
+| 58 | 工作台公共筛选字典 | GET | /api/workbench/dicts |
+| 59 | 心电数据分页列表查询 | POST | /api/ecg-data/page |
+| 60 | 心电数据上传 | POST | /api/ecg-data/upload |
+| 61 | 心电数据详情查询 | GET | /api/ecg-data/{ecgId} |
+| 62 | 心电数据状态更新 | PUT | /api/ecg-data/status |
+| 63 | 心电数据筛选字典 | GET | /api/ecg-data/dicts |
+| 64 | 原始心电波形数据获取 | GET | /api/ecg-data/{ecgId}/waveform |
+| 65 | AI诊断全局统计概览 | GET | /api/analysis/ai-diagnosis/overview |
+| 66 | AI诊断记录分页查询 | POST | /api/analysis/ai-diagnosis/page |
+| 67 | AI诊断审核状态字典 | GET | /api/analysis/ai-diagnosis/dicts |
+| 68 | AI诊断详情查询 | GET | /api/analysis/ai-diagnosis/{diagnosisId} |
+| 69 | AI诊断原始心电波形数据 | GET | /api/analysis/ai-diagnosis/ecg/{ecgId}/waveform |
+| 70 | 医生审核提交 | POST | /api/analysis/ai-diagnosis/audit |
+| 71 | 诊断报告分页列表查询 | POST | /api/analysis/diagnosis-report/page |
+| 72 | 诊断报告筛选字典 | GET | /api/analysis/diagnosis-report/dicts |
+| 73 | 单条诊断报告详情查询 | GET | /api/analysis/diagnosis-report/{reportId} |
+| 74 | 诊断报告PDF下载 | GET | /api/analysis/diagnosis-report/{reportId}/pdf |
+| 75 | 患者公共筛选字典 | GET | /api/patient/dicts |
 
 ---
 
@@ -1174,18 +1175,20 @@ Authorization: Bearer <token>
 
 ## 12. 实时监护模块接口规范
 
-## 12.1 全局顶部统计接口
+## 12.1 实时监护全局顶部统计接口
 
 ### 12.1.1 接口信息
 
 | 项 | 内容 |
 |---|---|
 | 接口名称 | 实时监护全局顶部统计 |
-| 业务作用 | 页面首次加载与定时轮询时渲染顶部统计数字 |
+| 业务作用 | 渲染监护大屏顶部 4 个核心统计数字 |
 | 请求路径 | /api/monitor/statistics |
 | 请求方式 | GET |
 | Content-Type | application/json |
-| 权限码 | monitor:dashboard:read |
+| 权限码 | monitor:overview:stat:read |
+
+兼容路径：`/api/monitor/overview/stat`
 
 ### 12.1.2 请求入参
 
@@ -1195,10 +1198,10 @@ Authorization: Bearer <token>
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| todayCollect | long | 今日采集量（当天 collection_start_time） |
-| pendingAnalyse | long | 待分析量（ai_analysis_status in 0/1） |
-| pendingAudit | long | 待审核量（report_status = 1） |
-| alertTotal | long | 预警总数（逻辑未删除） |
+| todayCollect | long | 今日采集量 |
+| pendingAnalyse | long | 待分析量 |
+| pendingAudit | long | 待审核量 |
+| alertCount | long | 预警总数 |
 
 ### 12.1.4 请求示例
 
@@ -1218,7 +1221,7 @@ Authorization: Bearer <token>
     "todayCollect": 45,
     "pendingAnalyse": 8,
     "pendingAudit": 12,
-    "alertTotal": 11
+    "alertCount": 11
   },
   "timestamp": 1776501256203
 }
@@ -1233,34 +1236,37 @@ Authorization: Bearer <token>
 | 项 | 内容 |
 |---|---|
 | 接口名称 | 实时监护大屏患者数据 |
-| 业务作用 | 大屏患者卡片数据源，支持 3~5 秒轮询刷新 |
+| 业务作用 | 查询普通监护患者列表，默认返回大屏数据；支持模板筛选兼容调用 |
 | 请求路径 | /api/monitor/patients |
 | 请求方式 | GET |
 | Content-Type | application/json |
-| 权限码 | monitor:list:read |
+| 权限码 | monitor:realtime:list:read |
+
+兼容路径：`/api/monitor/realTime/list`（POST，支持 `wardId`、`level` 筛选）
 
 ### 12.2.2 请求入参
 
 无业务入参。
 
+说明：当使用兼容路径 `/api/monitor/realTime/list` 时，可传 `wardId`（科室筛选）和 `level`（等级筛选）。
+
 ### 12.2.3 出参说明
 
-#### data 顶层结构
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| list | array | 实时监护患者列表 |
+
+list[] 字段：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| list | array | 患者实时监护卡片列表 |
-
-#### data.list[] 字段
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| patientId | long | 患者 ID |
+| patientId | long | 患者ID |
 | patientName | string | 患者姓名 |
-| wardBed | string | 病区与床位（示例：心内一病区 \| 1床） |
-| heartRate | integer | 当前心率 |
-| monitorStatus | string | 监护状态（正常/预警/离线） |
-| updateTime | string | 最近更新时间（HH:mm:ss） |
+| wardBed | string | 病区床号 |
+| heartRate | integer | 心率 |
+| status | string | 状态（正常/预警） |
+| updateTime | string | 更新时间 |
+| actionPermissions | array | 操作按钮权限（示例：monitor:opt:addKey） |
 
 ### 12.2.4 请求示例
 
@@ -1283,16 +1289,11 @@ Authorization: Bearer <token>
         "patientName": "张建国",
         "wardBed": "心内一病区 | 1床",
         "heartRate": 86,
-        "monitorStatus": "正常",
-        "updateTime": "11:55:00"
-      },
-      {
-        "patientId": 1904,
-        "patientName": "陈敏",
-        "wardBed": "冠心监护病区 | ICU-01",
-        "heartRate": 128,
-        "monitorStatus": "预警",
-        "updateTime": "11:58:00"
+        "status": "正常",
+        "updateTime": "2026-04-20 10:15:30",
+        "actionPermissions": [
+          "monitor:opt:addKey"
+        ]
       }
     ]
   },
@@ -1302,18 +1303,18 @@ Authorization: Bearer <token>
 
 ---
 
-## 12.3 科室分布统计接口
+## 12.3 重点监护患者列表查询
 
 ### 12.3.1 接口信息
 
 | 项 | 内容 |
 |---|---|
-| 接口名称 | 实时监护科室分布统计 |
-| 业务作用 | 渲染实时监护科室条形图数据 |
-| 请求路径 | /api/monitor/ward-distribution |
+| 接口名称 | 重点监护患者列表查询 |
+| 业务作用 | 查询重点监护患者列表，页面展示“解除重点监护”按钮 |
+| 请求路径 | /api/monitor/key/list |
 | 请求方式 | GET |
 | Content-Type | application/json |
-| 权限码 | monitor:ward:read |
+| 权限码 | monitor:key:list:read |
 
 ### 12.3.2 请求入参
 
@@ -1321,21 +1322,12 @@ Authorization: Bearer <token>
 
 ### 12.3.3 出参说明
 
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| dataList | array | 科室分布列表 |
-
-dataList[] 字段：
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| wardName | string | 病区/科室名称 |
-| patientCount | long | 患者数 |
+返回结构与 12.2 一致，`list[].actionPermissions` 固定包含 `monitor:opt:cancelKey`。
 
 ### 12.3.4 请求示例
 
 ```http
-GET /api/monitor/ward-distribution HTTP/1.1
+GET /api/monitor/key/list HTTP/1.1
 Host: 127.0.0.1:8080
 Authorization: Bearer <token>
 ```
@@ -1347,10 +1339,18 @@ Authorization: Bearer <token>
   "code": 0,
   "message": "成功",
   "data": {
-    "dataList": [
-      { "wardName": "心内一病区", "patientCount": 2 },
-      { "wardName": "心内二病区", "patientCount": 1 },
-      { "wardName": "冠心监护病区", "patientCount": 1 }
+    "list": [
+      {
+        "patientId": 1904,
+        "patientName": "陈敏",
+        "wardBed": "冠心监护病区 | ICU-01",
+        "heartRate": 128,
+        "status": "预警",
+        "updateTime": "2026-04-20 10:16:42",
+        "actionPermissions": [
+          "monitor:opt:cancelKey"
+        ]
+      }
     ]
   },
   "timestamp": 1776501256203
@@ -1359,18 +1359,20 @@ Authorization: Bearer <token>
 
 ---
 
-## 12.4 AI 诊断准确率接口
+## 12.4 实时监护科室分布统计接口
 
 ### 12.4.1 接口信息
 
 | 项 | 内容 |
 |---|---|
-| 接口名称 | AI 诊断准确率 |
-| 业务作用 | 渲染大屏 AI 准确率看板 |
-| 请求路径 | /api/monitor/ai-accuracy |
+| 接口名称 | 实时监护科室分布统计 |
+| 业务作用 | 返回科室名称与患者总数，供右侧条形图渲染 |
+| 请求路径 | /api/monitor/ward-distribution |
 | 请求方式 | GET |
 | Content-Type | application/json |
-| 权限码 | monitor:accuracy:read |
+| 权限码 | monitor:dept:stat:read |
+
+兼容路径：`/api/monitor/dept/stat`
 
 ### 12.4.2 请求入参
 
@@ -1380,12 +1382,19 @@ Authorization: Bearer <token>
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| accuracyRate | number | AI 准确率（百分比值） |
+| list | array | 科室统计列表 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| deptName | string | 科室名称 |
+| patientCount | long | 患者总数 |
 
 ### 12.4.4 请求示例
 
 ```http
-GET /api/monitor/ai-accuracy HTTP/1.1
+GET /api/monitor/ward-distribution HTTP/1.1
 Host: 127.0.0.1:8080
 Authorization: Bearer <token>
 ```
@@ -1397,7 +1406,10 @@ Authorization: Bearer <token>
   "code": 0,
   "message": "成功",
   "data": {
-    "accuracyRate": 96.88
+    "list": [
+      { "deptName": "冠心监护病区", "patientCount": 4 },
+      { "deptName": "心内一病区", "patientCount": 3 }
+    ]
   },
   "timestamp": 1776501256203
 }
@@ -1405,95 +1417,47 @@ Authorization: Bearer <token>
 
 ---
 
-## 12.5 单患者监护详情扩展接口
+## 12.5 加入重点监护（状态更新）
 
 ### 12.5.1 接口信息
 
 | 项 | 内容 |
 |---|---|
-| 接口名称 | 单患者监护详情扩展 |
-| 业务作用 | 点击患者卡片查看完整心电趋势、历史预警、连续监护记录 |
-| 请求路径 | /api/monitor/detail |
-| 请求方式 | GET |
+| 接口名称 | 加入重点监护 |
+| 业务作用 | 将患者监护状态更新为重点监护 |
+| 请求路径 | /api/monitor/opt/addKey |
+| 请求方式 | POST |
 | Content-Type | application/json |
-| 权限码 | monitor:detail:read |
+| 权限码 | monitor:opt:addKey |
 
 ### 12.5.2 请求入参
 
-| 参数位置 | 字段 | 类型 | 必填 | 说明 |
-|---|---|---|---|---|
-| Query | patientId | long | 是 | 患者唯一 ID |
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| patientId | long | 是 | 患者ID |
+| monitorType | string | 是 | 监护类型 |
 
 ### 12.5.3 出参说明
 
-#### data 顶层字段
-
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| patientId | long | 患者 ID |
-| patientName | string | 患者姓名 |
-| inpatientNo | string | 住院号 |
-| wardName | string | 病区 |
-| bedNo | string | 床位 |
-| wardBed | string | 病区与床位 |
-| primaryDiagnosis | string | 临床诊断 |
-| currentHeartRate | integer | 当前心率 |
-| monitorStatus | integer | 监护状态编码 |
-| monitorStatusText | string | 监护状态文本 |
-| warningLevel | integer | 预警等级编码 |
-| warningLevelText | string | 预警等级文本 |
-| updateTime | string | 最近更新时间 |
-| ecgTrend | array | 心电趋势点列表 |
-| warningHistory | array | 历史预警列表 |
-| continuousRecords | array | 连续监护记录列表 |
-
-#### data.ecgTrend[] 字段
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| trendTime | string | 趋势时间点 |
-| heartRate | integer | 心率 |
-| abnormalLevel | integer | 异常级别编码 |
-| abnormalLevelText | string | 异常级别文本 |
-
-#### data.warningHistory[] 字段
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| alertId | long | 预警 ID |
-| warningTime | string | 预警时间 |
-| warningType | string | 预警类型 |
-| alertLevel | integer | 预警级别编码 |
-| alertLevelText | string | 预警级别文本 |
-| alertStatus | integer | 处理状态编码 |
-| alertStatusText | string | 处理状态文本 |
-| handleTime | string/null | 处理时间 |
-| handleUserName | string | 处理人 |
-| handleRemark | string | 处理备注 |
-
-#### data.continuousRecords[] 字段
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| recordId | long | 采集记录 ID |
-| ecgNo | string | 心电编号 |
-| collectionStartTime | string | 采集开始时间 |
-| collectionEndTime | string | 采集结束时间 |
-| deviceName | string | 设备名称 |
-| aiAnalysisStatus | integer | AI 分析状态编码 |
-| aiAnalysisStatusText | string | AI 分析状态文本 |
-| reportStatus | integer | 报告状态编码 |
-| reportStatusText | string | 报告状态文本 |
-| displayStatus | integer | 展示状态编码 |
-| displayStatusText | string | 展示状态文本 |
-| aiConclusionShort | string | AI 简要结论 |
+| patientId | long | 患者ID |
+| keyMonitor | boolean | 是否重点监护（固定 true） |
+| monitorStatus | string | 监护状态文本（重点监护） |
+| monitorType | string | 监护类型 |
 
 ### 12.5.4 请求示例
 
 ```http
-GET /api/monitor/detail?patientId=1904 HTTP/1.1
+POST /api/monitor/opt/addKey HTTP/1.1
 Host: 127.0.0.1:8080
 Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "patientId": 1904,
+  "monitorType": "床旁重点监护"
+}
 ```
 
 ### 12.5.5 响应示例
@@ -1504,56 +1468,68 @@ Authorization: Bearer <token>
   "message": "成功",
   "data": {
     "patientId": 1904,
-    "patientName": "陈敏",
-    "inpatientNo": "ZY202604004",
-    "wardName": "冠心监护病区",
-    "bedNo": "ICU-01",
-    "wardBed": "冠心监护病区 | ICU-01",
-    "primaryDiagnosis": "急性冠脉综合征（监护中）",
-    "currentHeartRate": 128,
-    "monitorStatus": 2,
-    "monitorStatusText": "预警",
-    "warningLevel": 3,
-    "warningLevelText": "高危",
-    "updateTime": "2026-04-18T11:58:00",
-    "ecgTrend": [
-      {
-        "trendTime": "2026-04-18T09:40:00",
-        "heartRate": 126,
-        "abnormalLevel": 3,
-        "abnormalLevelText": "高危"
-      }
-    ],
-    "warningHistory": [
-      {
-        "alertId": 2404,
-        "warningTime": "2026-04-18T09:41:00",
-        "warningType": "室性心动过速风险",
-        "alertLevel": 3,
-        "alertLevelText": "高危",
-        "alertStatus": 2,
-        "alertStatusText": "处理中",
-        "handleTime": "2026-04-18T09:50:00",
-        "handleUserName": "孙主任",
-        "handleRemark": "处理中，等待二次复核结果"
-      }
-    ],
-    "continuousRecords": [
-      {
-        "recordId": 2104,
-        "ecgNo": "ECG20260418004",
-        "collectionStartTime": "2026-04-18T09:30:00",
-        "collectionEndTime": "2026-04-18T09:40:00",
-        "deviceName": "ICU多参数监护仪",
-        "aiAnalysisStatus": 2,
-        "aiAnalysisStatusText": "已分析",
-        "reportStatus": 3,
-        "reportStatusText": "驳回",
-        "displayStatus": 3,
-        "displayStatusText": "已驳回",
-        "aiConclusionShort": "室速风险，建议立即复核"
-      }
-    ]
+    "keyMonitor": true,
+    "monitorStatus": "重点监护",
+    "monitorType": "床旁重点监护"
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 12.6 解除重点监护（状态回滚）
+
+### 12.6.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 解除重点监护 |
+| 业务作用 | 将患者监护状态回滚为普通监护 |
+| 请求路径 | /api/monitor/opt/cancelKey |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | monitor:opt:cancelKey |
+
+### 12.6.2 请求入参
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| patientId | long | 是 | 患者ID |
+
+### 12.6.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| patientId | long | 患者ID |
+| keyMonitor | boolean | 是否重点监护（固定 false） |
+| monitorStatus | string | 监护状态文本（普通监护） |
+| monitorType | string | 监护类型（普通监护） |
+
+### 12.6.4 请求示例
+
+```http
+POST /api/monitor/opt/cancelKey HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "patientId": 1904
+}
+```
+
+### 12.6.5 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "patientId": 1904,
+    "keyMonitor": false,
+    "monitorStatus": "普通监护",
+    "monitorType": "普通监护"
   },
   "timestamp": 1776501256203
 }
@@ -1563,19 +1539,22 @@ Authorization: Bearer <token>
 
 ## 13. 实时监护业务规则
 
-1. 顶部统计基于实时业务表计算：今日采集来自 ecg_collection_record，待审核来自 ecg_diagnosis_report，预警总数来自 ecg_abnormal_warning。
-2. pendingAnalyse 口径为 ai_analysis_status in (0,1)，覆盖“待分析+分析中”。
-3. 大屏列表仅返回逻辑未删除监护数据（ecg_real_time_monitor.is_deleted = 0），并按预警优先、更新时间倒序展示。
-4. 科室分布统计按实时监护表 dept_name 聚合，适配条形图直接渲染。
-5. 单患者详情聚合顺序：基础监护信息 -> 心电趋势 -> 历史预警 -> 连续监护记录。
-6. 心电趋势按 collection_end_time 倒序；预警历史按 warning_time 倒序；连续监护记录按 collection_start_time 倒序。
-7. 轮询建议：顶部统计 30~60 秒刷新一次；患者列表 3~5 秒刷新一次；详情页按临床场景可 5~10 秒刷新。
+1. 顶部统计由采集记录、诊断报告、预警表联合计算，返回字段固定为 todayCollect、pendingAnalyse、pendingAudit、alertCount。
+2. 实时监护大屏患者数据接口（/api/monitor/patients）仅查询普通监护数据（ecg_real_time_monitor.is_key_monitor = 0）；兼容路径 /api/monitor/realTime/list 支持 wardId、level 可选筛选。
+3. 重点监护患者列表仅查询重点监护数据（ecg_real_time_monitor.is_key_monitor = 1）。
+4. 列表状态按 monitor_status 映射：1=正常，2=预警；接口不返回离线态。
+5. 加入重点监护与解除重点监护均为状态更新接口，通过 patientId 更新 is_key_monitor（1/0），实现页面卡片即时移入/移出闭环。
+6. 加入重点监护时 monitorType 为必填，用于记录业务动作上下文与前端展示。
+7. 列表接口返回 actionPermissions，前端按权限渲染“加入重点监护”或“解除重点监护”按钮。
 
 ## 14. 实时监护错误场景
 
 | 场景 | code | message 示例 |
 |---|---|---|
+| wardId 为空或非法 | 400 | wardId 参数不合法 |
+| level 传入非法值 | 400 | level 参数不合法 |
 | patientId 为空或非法 | 400 | patientId 参数不合法 |
+| monitorType 为空或非法 | 400 | monitorType 参数不合法 |
 | 患者监护数据不存在 | 404 | 患者监护数据不存在 |
 | 未登录或 token 失效 | 401 | 未认证或登录已失效 |
 | 无权限访问 | 403 | 无权限访问 |
@@ -4150,7 +4129,7 @@ Content-Type: application/json
 | 项 | 内容 |
 |---|---|
 | 接口名称 | 科室分页列表查询 |
-| 业务作用 | 分页查询科室/病区，支持关键词、上级科室、状态筛选 |
+| 业务作用 | 分页查询科室/病区，支持关键词与状态筛选 |
 | 请求路径 | /api/system/department/page |
 | 请求方式 | POST |
 | Content-Type | application/json |
@@ -4161,7 +4140,6 @@ Content-Type: application/json
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 |---|---|---|---|---|
 | keyword | string | 否 | 空 | 科室名称关键词 |
-| parentDeptId | long | 否 | 空 | 上级科室 ID |
 | status | string | 否 | 空 | 状态，支持 启用/禁用 或 1/0 |
 | pageNum | long | 否 | 1 | 页码，最小 1 |
 | pageSize | long | 否 | 10 | 每页条数，最大 200 |
@@ -4184,13 +4162,11 @@ Content-Type: application/json
 |---|---|---|
 | deptId | long | 科室 ID |
 | deptName | string | 科室名称 |
-| parentDeptId | long | 上级科室 ID |
 | parentDeptName | string | 上级科室名称 |
-| deptLevel | integer | 科室级别编码（1-科室 2-病区 3-居家站点） |
-| deptLevelText | string | 科室级别文本 |
-| deptDirector | string | 科室主任 |
-| contactPhone | string | 联系电话 |
-| location | string | 位置 |
+| deptType | integer | 层级类型编码（1-科室 2-病区 3-居家站点） |
+| deptTypeText | string | 层级类型文本 |
+| director | string | 负责人 |
+| phone | string | 联系电话 |
 | status | integer | 状态编码 |
 | statusText | string | 状态文本 |
 | createTime | string | 创建时间（ISO-8601） |
@@ -4205,7 +4181,6 @@ Content-Type: application/json
 
 {
   "keyword": "心内",
-  "parentDeptId": 1201,
   "status": "1",
   "pageNum": 1,
   "pageSize": 10
@@ -4227,13 +4202,11 @@ Content-Type: application/json
       {
         "deptId": 1202,
         "deptName": "心血管内科一病区",
-        "parentDeptId": 1201,
         "parentDeptName": "心血管内科",
-        "deptLevel": 2,
-        "deptLevelText": "病区",
-        "deptDirector": "孙主任",
-        "contactPhone": "13800000002",
-        "location": null,
+        "deptType": 2,
+        "deptTypeText": "病区",
+        "director": "孙主任",
+        "phone": "13800000002",
         "status": 1,
         "statusText": "启用",
         "createTime": "2026-04-18T00:00:00"
@@ -4246,53 +4219,61 @@ Content-Type: application/json
 
 ---
 
-## 30.2 科室公共字典接口
+## 30.2 新增科室接口
 
 ### 30.2.1 接口信息
 
 | 项 | 内容 |
 |---|---|
-| 接口名称 | 科室公共字典接口 |
-| 业务作用 | 页面初始化获取上级科室树、科室级别枚举、启停状态字典 |
-| 请求路径 | /api/system/department/dicts |
-| 请求方式 | GET |
+| 接口名称 | 新增科室 |
+| 业务作用 | 新建科室主档，写入层级关系、负责人和状态 |
+| 请求路径 | /api/system/department |
+| 请求方式 | POST |
 | Content-Type | application/json |
-| 权限码 | system:department:dict |
+| 权限码 | system:department:create |
 
 ### 30.2.2 请求入参
 
-无业务入参。
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| deptName | string | 是 | 科室名称 |
+| parentId | long | 否 | 上级科室 ID（不传表示顶级） |
+| deptType | integer | 是 | 层级类型：1-科室 2-病区 3-居家站点 |
+| director | string | 否 | 负责人 |
+| phone | string | 否 | 联系电话 |
+| location | string | 否 | 位置 |
+| status | integer | 否 | 状态：1-启用，0-禁用；默认 1 |
 
 ### 30.2.3 出参说明
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| parentDeptTree | array | 上级科室树列表 |
-| deptLevelOptions | array | 科室级别枚举 |
-| statusOptions | array | 科室启停状态字典 |
-
-parentDeptTree[] 字段：
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
 | deptId | long | 科室 ID |
-| parentDeptId | long | 上级科室 ID |
 | deptName | string | 科室名称 |
-| children | array | 子科室节点 |
-
-字典项结构：
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| value | string | 字典值 |
-| label | string | 展示文本 |
+| parentDeptId | long | 上级科室 ID |
+| parentDeptName | string | 上级科室名称 |
+| deptType | integer | 层级类型编码 |
+| deptTypeText | string | 层级类型文本 |
+| director | string | 负责人 |
+| phone | string | 联系电话 |
+| location | string | 位置 |
+| status | integer | 状态编码 |
+| statusText | string | 状态文本 |
+| createTime | string | 创建时间（ISO-8601） |
+| updateTime | string | 更新时间（ISO-8601） |
 
 ### 30.2.4 请求示例
 
-```http
-GET /api/system/department/dicts HTTP/1.1
-Host: 127.0.0.1:8080
-Authorization: Bearer <token>
+```json
+{
+  "deptName": "心电门诊",
+  "parentId": 1201,
+  "deptType": 2,
+  "director": "张主任",
+  "phone": "13800138000",
+  "location": "3F-东区",
+  "status": 1
+}
 ```
 
 ### 30.2.5 响应示例
@@ -4302,32 +4283,19 @@ Authorization: Bearer <token>
   "code": 0,
   "message": "成功",
   "data": {
-    "parentDeptTree": [
-      {
-        "deptId": 1201,
-        "parentDeptId": null,
-        "deptName": "心血管内科",
-        "children": [
-          {
-            "deptId": 1202,
-            "parentDeptId": 1201,
-            "deptName": "心血管内科一病区",
-            "children": []
-          }
-        ]
-      }
-    ],
-    "deptLevelOptions": [
-      { "value": "", "label": "全部级别" },
-      { "value": "1", "label": "科室" },
-      { "value": "2", "label": "病区" },
-      { "value": "3", "label": "居家站点" }
-    ],
-    "statusOptions": [
-      { "value": "", "label": "全部状态" },
-      { "value": "1", "label": "启用" },
-      { "value": "0", "label": "禁用" }
-    ]
+    "deptId": 1206,
+    "deptName": "心电门诊",
+    "parentDeptId": 1201,
+    "parentDeptName": "心血管内科",
+    "deptType": 2,
+    "deptTypeText": "病区",
+    "director": "张主任",
+    "phone": "13800138000",
+    "location": "3F-东区",
+    "status": 1,
+    "statusText": "启用",
+    "createTime": "2026-04-18T21:10:00",
+    "updateTime": "2026-04-18T21:10:00"
   },
   "timestamp": 1776501256203
 }
@@ -4335,64 +4303,47 @@ Authorization: Bearer <token>
 
 ---
 
-## 30.3 新增科室接口
+## 30.3 编辑科室接口
 
 ### 30.3.1 接口信息
 
 | 项 | 内容 |
 |---|---|
-| 接口名称 | 新增科室 |
-| 业务作用 | 新建科室主档，写入层级关系与状态 |
+| 接口名称 | 编辑科室 |
+| 业务作用 | 更新科室主档与层级关系 |
 | 请求路径 | /api/system/department |
-| 请求方式 | POST |
+| 请求方式 | PUT |
 | Content-Type | application/json |
-| 权限码 | system:department:create |
+| 权限码 | system:department:update |
 
 ### 30.3.2 请求入参
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
+| deptId | long | 是 | 科室 ID |
 | deptName | string | 是 | 科室名称 |
-| parentDeptId | long | 否 | 上级科室 ID |
-| deptLevel | integer | 是 | 科室级别：1-科室 2-病区 3-居家站点 |
-| deptDirector | string | 否 | 科室主任 |
-| contactPhone | string | 否 | 联系电话 |
+| parentId | long | 否 | 上级科室 ID |
+| deptType | integer | 是 | 层级类型：1-科室 2-病区 3-居家站点 |
+| director | string | 否 | 负责人 |
+| phone | string | 否 | 联系电话 |
 | location | string | 否 | 位置 |
-| status | integer | 否 | 状态：1-启用，0-禁用；默认 1 |
+| status | integer | 否 | 状态：1-启用，0-禁用 |
 
 ### 30.3.3 出参说明
 
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| deptId | long | 科室 ID |
-| deptName | string | 科室名称 |
-| parentDeptId | long | 上级科室 ID |
-| parentDeptName | string | 上级科室名称 |
-| deptLevel | integer | 科室级别编码 |
-| deptLevelText | string | 科室级别文本 |
-| deptDirector | string | 科室主任 |
-| contactPhone | string | 联系电话 |
-| location | string | 位置 |
-| status | integer | 状态编码 |
-| statusText | string | 状态文本 |
-| createTime | string | 创建时间（ISO-8601） |
-| updateTime | string | 更新时间（ISO-8601） |
+返回字段同 30.2.3。
 
 ### 30.3.4 请求示例
 
-```http
-POST /api/system/department HTTP/1.1
-Host: 127.0.0.1:8080
-Authorization: Bearer <token>
-Content-Type: application/json
-
+```json
 {
-  "deptName": "心电门诊",
-  "parentDeptId": 1201,
-  "deptLevel": 2,
-  "deptDirector": "张主任",
-  "contactPhone": "13800138000",
-  "location": "3F-东区",
+  "deptId": 1202,
+  "deptName": "心血管内科一病区",
+  "parentId": 1201,
+  "deptType": 2,
+  "director": "孙主任",
+  "phone": "13800000002",
+  "location": "4F-东区",
   "status": 1
 }
 ```
@@ -4404,19 +4355,19 @@ Content-Type: application/json
   "code": 0,
   "message": "成功",
   "data": {
-    "deptId": 1933887803345678901,
-    "deptName": "心电门诊",
+    "deptId": 1202,
+    "deptName": "心血管内科一病区",
     "parentDeptId": 1201,
     "parentDeptName": "心血管内科",
-    "deptLevel": 2,
-    "deptLevelText": "病区",
-    "deptDirector": null,
-    "contactPhone": null,
-    "location": "3F-东区",
+    "deptType": 2,
+    "deptTypeText": "病区",
+    "director": "孙主任",
+    "phone": "13800000002",
+    "location": "4F-东区",
     "status": 1,
     "statusText": "启用",
-    "createTime": "2026-04-18T21:10:00",
-    "updateTime": "2026-04-18T21:10:00"
+    "createTime": "2026-04-18T00:00:00",
+    "updateTime": "2026-04-18T21:20:00"
   },
   "timestamp": 1776501256203
 }
@@ -4431,7 +4382,7 @@ Content-Type: application/json
 | 项 | 内容 |
 |---|---|
 | 接口名称 | 科室详情查询 |
-| 业务作用 | 打开编辑/查看弹窗时预填充全部表单字段 |
+| 业务作用 | 编辑/查看弹窗回显全部字段 |
 | 请求路径 | /api/system/department/detail |
 | 请求方式 | GET |
 | Content-Type | application/json |
@@ -4445,7 +4396,7 @@ Content-Type: application/json
 
 ### 30.4.3 出参说明
 
-返回字段同 30.3.3。
+返回字段同 30.2.3。
 
 ### 30.4.4 请求示例
 
@@ -4466,83 +4417,10 @@ Authorization: Bearer <token>
     "deptName": "心血管内科一病区",
     "parentDeptId": 1201,
     "parentDeptName": "心血管内科",
-    "deptLevel": 2,
-    "deptLevelText": "病区",
-    "deptDirector": "孙主任",
-    "contactPhone": "13800000002",
-    "location": null,
-    "status": 1,
-    "statusText": "启用",
-    "createTime": "2026-04-18T00:00:00",
-    "updateTime": "2026-04-18T00:00:00"
-  },
-  "timestamp": 1776501256203
-}
-```
-
----
-
-## 30.5 编辑科室接口
-
-### 30.5.1 接口信息
-
-| 项 | 内容 |
-|---|---|
-| 接口名称 | 编辑科室 |
-| 业务作用 | 更新科室主档与层级信息 |
-| 请求路径 | /api/system/department |
-| 请求方式 | PUT |
-| Content-Type | application/json |
-| 权限码 | system:department:update |
-
-### 30.5.2 请求入参
-
-| 字段 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| deptId | long | 是 | 科室 ID |
-| deptName | string | 否 | 科室名称 |
-| parentDeptId | long | 否 | 上级科室 ID |
-| deptLevel | integer | 否 | 科室级别 |
-| deptDirector | string | 否 | 科室主任 |
-| contactPhone | string | 否 | 联系电话 |
-| location | string | 否 | 位置 |
-| status | integer | 否 | 状态：1-启用，0-禁用 |
-
-### 30.5.3 出参说明
-
-返回字段同 30.3.3。
-
-### 30.5.4 请求示例
-
-```http
-PUT /api/system/department HTTP/1.1
-Host: 127.0.0.1:8080
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "deptId": 1202,
-  "deptName": "心血管内科一病区",
-  "location": "4F-东区",
-  "status": 1
-}
-```
-
-### 30.5.5 响应示例
-
-```json
-{
-  "code": 0,
-  "message": "成功",
-  "data": {
-    "deptId": 1202,
-    "deptName": "心血管内科一病区",
-    "parentDeptId": 1201,
-    "parentDeptName": "心血管内科",
-    "deptLevel": 2,
-    "deptLevelText": "病区",
-    "deptDirector": "孙主任",
-    "contactPhone": "13800000002",
+    "deptType": 2,
+    "deptTypeText": "病区",
+    "director": "孙主任",
+    "phone": "13800000002",
     "location": "4F-东区",
     "status": 1,
     "statusText": "启用",
@@ -4555,46 +4433,44 @@ Content-Type: application/json
 
 ---
 
-## 30.6 删除科室接口
+## 30.5 删除科室接口
 
-### 30.6.1 接口信息
+### 30.5.1 接口信息
 
 | 项 | 内容 |
 |---|---|
 | 接口名称 | 删除科室 |
-| 业务作用 | 逻辑删除科室，执行子科室拦截与绑定关系校验 |
+| 业务作用 | 删除前执行关联校验，满足条件后逻辑删除 |
 | 请求路径 | /api/system/department |
 | 请求方式 | DELETE |
 | Content-Type | application/json |
 | 权限码 | system:department:delete |
 
-### 30.6.2 请求入参
+### 30.5.2 请求入参
 
 | 参数位置 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|---|
 | Query | deptId | long | 是 | 科室 ID |
-| Query | force | boolean | 否 | 已绑定用户/设备时是否确认删除，默认 false |
 
-### 30.6.3 出参说明
+### 30.5.3 出参说明
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | deptId | long | 科室 ID |
 | deleted | boolean | 是否删除成功 |
-| childCount | long | 下级子科室数量 |
-| boundUserCount | long | 绑定用户数量 |
+| childCount | long | 下级科室数量 |
+| boundBedCount | long | 绑定床位数量 |
 | boundDeviceCount | long | 绑定设备数量 |
-| forcedDelete | boolean | 是否执行了二次确认删除 |
 
-### 30.6.4 请求示例
+### 30.5.4 请求示例
 
 ```http
-DELETE /api/system/department?deptId=1205&force=true HTTP/1.1
+DELETE /api/system/department?deptId=1205 HTTP/1.1
 Host: 127.0.0.1:8080
 Authorization: Bearer <token>
 ```
 
-### 30.6.5 响应示例
+### 30.5.5 响应示例
 
 ```json
 {
@@ -4604,10 +4480,132 @@ Authorization: Bearer <token>
     "deptId": 1205,
     "deleted": true,
     "childCount": 0,
-    "boundUserCount": 1,
-    "boundDeviceCount": 1,
-    "forcedDelete": true
+    "boundBedCount": 0,
+    "boundDeviceCount": 0
   },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 30.6 科室状态单独切换接口
+
+### 30.6.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 科室状态单独切换 |
+| 业务作用 | 独立切换科室启停状态，不更新其他字段 |
+| 请求路径 | /api/system/department/status |
+| 请求方式 | PUT |
+| Content-Type | application/json |
+| 权限码 | system:department:update |
+
+### 30.6.2 请求入参
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| deptId | long | 是 | 科室 ID |
+| status | integer | 是 | 目标状态：1-启用，0-禁用 |
+
+### 30.6.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| deptId | long | 科室 ID |
+| status | integer | 状态编码 |
+| statusText | string | 状态文本 |
+
+### 30.6.4 请求示例
+
+```json
+{
+  "deptId": 1202,
+  "status": 0
+}
+```
+
+### 30.6.5 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "deptId": 1202,
+    "status": 0,
+    "statusText": "禁用"
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 30.7 上级科室树形下拉接口
+
+### 30.7.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 上级科室树形下拉 |
+| 业务作用 | 获取上级科室树；编辑时可按 deptId 过滤自身及其下级，防止闭环 |
+| 请求路径 | /api/system/department/tree |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | system:department:dict |
+
+### 30.7.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | deptId | long | 否 | 当前编辑的科室 ID（传入后过滤自身及其下级） |
+
+### 30.7.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| deptId | long | 科室 ID |
+| parentDeptId | long | 上级科室 ID |
+| deptName | string | 科室名称 |
+| children | array | 子节点 |
+
+### 30.7.4 请求示例
+
+```http
+GET /api/system/department/tree?deptId=1202 HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+```
+
+### 30.7.5 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": [
+    {
+      "deptId": 1201,
+      "parentDeptId": null,
+      "deptName": "心血管内科",
+      "children": []
+    },
+    {
+      "deptId": 1301,
+      "parentDeptId": null,
+      "deptName": "神经内科",
+      "children": [
+        {
+          "deptId": 1302,
+          "parentDeptId": 1301,
+          "deptName": "神经内科一病区",
+          "children": []
+        }
+      ]
+    }
+  ],
   "timestamp": 1776501256203
 }
 ```
@@ -4618,29 +4616,30 @@ Authorization: Bearer <token>
 
 1. 科室分页默认参数：pageNum=1，pageSize=10，且 pageSize 最大 200。
 2. status 支持中文枚举与编码双输入（启用/禁用 或 1/0）。
-3. deptName 长度最大 64，且在同一 parentDeptId 下保持唯一。
-4. deptLevel 仅支持 1（科室）、2（病区）、3（居家站点）。
-5. 删除科室前必须校验下级子科室数量；存在子科室时直接拦截，不允许强删。
-6. 删除科室时若已绑定用户或设备，需二次确认（force=true）后才允许删除。
+3. deptName 长度最大 64，且在同一上级科室下保持唯一。
+4. deptType 仅支持 1（科室）、2（病区）、3（居家站点）。
+5. 删除科室前必须校验下级科室；存在下级科室直接拦截。
+6. 删除科室前必须校验科室是否绑定床位或设备；有绑定直接拦截。
 7. 科室删除采用逻辑删除（sys_department.is_deleted=1），不做物理删除。
-8. 公共字典接口返回上级科室树（仅启用状态），供新增/编辑弹窗直接渲染。
-9. location 字段通过科室编码扩展段进行保存，历史无扩展段数据返回 null。
+8. 科室状态切换使用独立接口 `/api/system/department/status`。
+9. 上级科室树接口在传入 deptId 时，自动过滤自身及其下级，避免形成父子闭环。
 
 ## 32. 科室管理模块错误场景
 
 | 场景 | code | message 示例 |
 |---|---|---|
-| deptId / parentDeptId 非法 | 400 | deptId 参数不合法 |
+| deptId / parentId 非法 | 400 | deptId 参数不合法 |
 | deptName 参数不合法 | 400 | deptName 参数不合法 |
-| deptLevel 参数不合法 | 400 | deptLevel 参数不合法 |
+| deptType 参数不合法 | 400 | deptType 参数不合法 |
 | status 参数不合法 | 400 | status 参数不合法 |
-| contactPhone 参数不合法 | 400 | contactPhone 参数不合法 |
+| phone 参数不合法 | 400 | phone 参数不合法 |
 | location 参数不合法 | 400 | location 参数不合法 |
-| parentDeptId 对应科室不存在 | 400 | parentDeptId 对应科室不存在 |
+| parentId 对应科室不存在 | 400 | parentId 对应科室不存在 |
+| parentId 形成闭环 | 400 | parentId 参数不合法 |
 | deptName 重复 | 1000 | deptName 已存在 |
 | 科室不存在 | 404 | 科室不存在 |
 | 存在下级子科室禁止删除 | 1000 | 存在下级子科室，禁止直接删除 |
-| 已绑定用户/设备但未确认删除 | 1000 | 科室已绑定用户或设备，请二次确认后删除（传 force=true） |
+| 已绑定床位/设备禁止删除 | 1000 | 科室已绑定床位或设备，禁止删除 |
 | 未登录或 token 失效 | 401 | 未认证或登录已失效 |
 | 服务内部异常 | 5000 | 系统繁忙，请稍后重试 |
 

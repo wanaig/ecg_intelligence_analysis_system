@@ -70,6 +70,15 @@
         LIMIT 1
     </select>
 
+    <select id="selectMaxQcIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT q.qc_id
+        FROM ecg_device_quality_control q
+        WHERE q.qc_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY q.qc_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
     <insert id="insertQualityControl" parameterType="com.hnkjzy.ecg_collection.model.entity.monitor.EcgDeviceQualityControlEntity">
         INSERT INTO ecg_device_quality_control (
             qc_id,
