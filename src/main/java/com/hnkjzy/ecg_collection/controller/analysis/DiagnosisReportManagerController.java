@@ -27,7 +27,7 @@ import java.nio.charset.StandardCharsets;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/analysis/diagnosis-report")
+@RequestMapping({"/api/analysis/diagnosis-report", "/analysis/diagnosis-report"})
 public class DiagnosisReportManagerController extends BaseController {
 
     private final DiagnosisReportManagerService diagnosisReportManagerService;

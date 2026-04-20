@@ -25,9 +25,10 @@ public interface EcgDataMapper {
                                                @Param("startTime") LocalDateTime startTime,
                                                @Param("endTime") LocalDateTime endTime);
 
-    EcgDataPatientSnapshotVo selectPatientSnapshot(@Param("patientId") Long patientId);
+    EcgDataPatientSnapshotVo selectPatientSnapshot(@Param("patientName") String patientName,
+                                                   @Param("inpatientNo") String inpatientNo);
 
-    EcgDataDeviceSnapshotVo selectDeviceSnapshot(@Param("deviceId") Long deviceId);
+    EcgDataDeviceSnapshotVo selectDeviceSnapshot(@Param("deviceNo") String deviceNo);
 
     int insertCollectionRecord(EcgCollectionRecordEntity entity);
 

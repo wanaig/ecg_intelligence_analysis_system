@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/warning")
+@RequestMapping({"/api/warning", "/warning"})
 public class WarningController extends BaseController {
 
     private final WarningService warningService;

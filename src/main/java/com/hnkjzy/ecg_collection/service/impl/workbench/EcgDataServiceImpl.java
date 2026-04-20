@@ -85,23 +85,30 @@ public class EcgDataServiceImpl extends BaseServiceImpl implements EcgDataServic
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public EcgDataUploadResultVo uploadData(MultipartFile file, Long deviceId, Long patientId) {
+    public EcgDataUploadResultVo uploadData(MultipartFile file, String patientName, String inpatientNo, String deviceNo) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "file is required");
         }
-        if (deviceId == null || deviceId <= 0) {
-            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "deviceId parameter is invalid");
+        if (!StringUtils.hasText(patientName)) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "patientName parameter is invalid");
         }
-        if (patientId == null || patientId <= 0) {
-            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "patientId parameter is invalid");
+        if (!StringUtils.hasText(inpatientNo)) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "inpatientNo parameter is invalid");
+        }
+        if (!StringUtils.hasText(deviceNo)) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "deviceNo parameter is invalid");
         }
 
-        EcgDataPatientSnapshotVo patient = ecgDataMapper.selectPatientSnapshot(patientId);
+        String normalizedPatientName = patientName.trim();
+        String normalizedInpatientNo = inpatientNo.trim();
+        String normalizedDeviceNo = deviceNo.trim();
+
+        EcgDataPatientSnapshotVo patient = ecgDataMapper.selectPatientSnapshot(normalizedPatientName, normalizedInpatientNo);
         if (patient == null) {
             throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "patient not found");
         }
 
-        EcgDataDeviceSnapshotVo device = ecgDataMapper.selectDeviceSnapshot(deviceId);
+        EcgDataDeviceSnapshotVo device = ecgDataMapper.selectDeviceSnapshot(normalizedDeviceNo);
         if (device == null) {
             throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "device not found");
         }

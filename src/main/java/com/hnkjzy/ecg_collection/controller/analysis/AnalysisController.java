@@ -21,7 +21,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/analysis")
+@RequestMapping({"/api/analysis", "/analysis"})
 public class AnalysisController extends BaseController {
 
     private final AnalysisService analysisService;

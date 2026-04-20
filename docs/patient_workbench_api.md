@@ -151,55 +151,56 @@
 | 22 | 质控筛选字典枚举 | GET | /api/monitor/quality-control/dicts |
 | 23 | 新增质控记录 | POST | /api/monitor/quality-control |
 | 24 | 编辑质控记录 | PUT | /api/monitor/quality-control |
-| 25 | 质控记录详情查询 | GET | /api/monitor/quality-control/detail |
-| 26 | 核心大盘指标 | GET | /api/analysis/core-metrics |
-| 27 | 病区心电测量统计 | GET | /api/analysis/ward-ecg-stats |
-| 28 | 预警维度统计 | GET | /api/analysis/warning-dimensions |
-| 29 | 报告与设备统计 | GET | /api/analysis/report-device-stats |
-| 30 | 数据分析筛选字典 | GET | /api/analysis/dicts |
-| 31 | 用户分页列表查询 | POST | /api/system/user/page |
-| 32 | 用户筛选字典接口 | GET | /api/system/user/dicts |
-| 33 | 新增用户 | POST | /api/system/user |
-| 34 | 查询用户单条详情 | GET | /api/system/user/detail |
-| 35 | 编辑用户信息 | PUT | /api/system/user |
-| 36 | 删除用户 | DELETE | /api/system/user |
-| 37 | 重置用户密码 | POST | /api/system/user/reset-password |
-| 38 | 角色分页列表查询 | POST | /api/system/role/page |
-| 39 | 新增角色 | POST | /api/system/role |
-| 40 | 角色详情查询 | GET | /api/system/role/detail |
-| 41 | 编辑角色 | PUT | /api/system/role |
-| 42 | 删除角色 | DELETE | /api/system/role |
-| 43 | 查询角色已有权限 | GET | /api/system/role/permissions |
-| 44 | 保存角色权限分配 | POST | /api/system/role/permissions |
-| 45 | 科室分页列表查询 | POST | /api/system/department/page |
-| 46 | 科室公共字典接口 | GET | /api/system/department/dicts |
-| 47 | 新增科室 | POST | /api/system/department |
-| 48 | 科室详情查询 | GET | /api/system/department/detail |
-| 49 | 编辑科室 | PUT | /api/system/department |
-| 50 | 删除科室 | DELETE | /api/system/department |
-| 51 | 工作台全局概览统计 | GET | /api/workbench/overview |
-| 52 | 待处理预警分页列表 | POST | /api/workbench/pending-alerts/page |
-| 53 | 最新心电记录分页查询 | POST | /api/workbench/latest-ecg/page |
-| 54 | 预警详情查询 | GET | /api/workbench/alerts/{alertId} |
-| 55 | 单条心电数据详情 | GET | /api/workbench/ecg/{ecgId} |
-| 56 | 工作台公共筛选字典 | GET | /api/workbench/dicts |
-| 57 | 心电数据分页列表查询 | POST | /api/ecg-data/page |
-| 58 | 心电数据上传 | POST | /api/ecg-data/upload |
-| 59 | 心电数据详情查询 | GET | /api/ecg-data/{ecgId} |
-| 60 | 心电数据状态更新 | PUT | /api/ecg-data/status |
-| 61 | 心电数据筛选字典 | GET | /api/ecg-data/dicts |
-| 62 | 原始心电波形数据获取 | GET | /api/ecg-data/{ecgId}/waveform |
-| 63 | AI诊断全局统计概览 | GET | /api/analysis/ai-diagnosis/overview |
-| 64 | AI诊断记录分页查询 | POST | /api/analysis/ai-diagnosis/page |
-| 65 | AI诊断审核状态字典 | GET | /api/analysis/ai-diagnosis/dicts |
-| 66 | AI诊断详情查询 | GET | /api/analysis/ai-diagnosis/{diagnosisId} |
-| 67 | AI诊断原始心电波形数据 | GET | /api/analysis/ai-diagnosis/ecg/{ecgId}/waveform |
-| 68 | 医生审核提交 | POST | /api/analysis/ai-diagnosis/audit |
-| 69 | 诊断报告分页列表查询 | POST | /api/analysis/diagnosis-report/page |
-| 70 | 诊断报告筛选字典 | GET | /api/analysis/diagnosis-report/dicts |
-| 71 | 单条诊断报告详情查询 | GET | /api/analysis/diagnosis-report/{reportId} |
-| 72 | 诊断报告PDF下载 | GET | /api/analysis/diagnosis-report/{reportId}/pdf |
-| 73 | 患者公共筛选字典 | GET | /api/patient/dicts |
+| 25 | 删除质控记录 | DELETE | /api/monitor/quality-control |
+| 26 | 质控记录详情查询 | GET | /api/monitor/quality-control/detail |
+| 27 | 核心大盘指标 | GET | /api/analysis/core-metrics |
+| 28 | 病区心电测量统计 | GET | /api/analysis/ward-ecg-stats |
+| 29 | 预警维度统计 | GET | /api/analysis/warning-dimensions |
+| 30 | 报告与设备统计 | GET | /api/analysis/report-device-stats |
+| 31 | 数据分析筛选字典 | GET | /api/analysis/dicts |
+| 32 | 用户分页列表查询 | POST | /api/system/user/page |
+| 33 | 用户筛选字典接口 | GET | /api/system/user/dicts |
+| 34 | 新增用户 | POST | /api/system/user |
+| 35 | 查询用户单条详情 | GET | /api/system/user/detail |
+| 36 | 编辑用户信息 | PUT | /api/system/user |
+| 37 | 删除用户 | DELETE | /api/system/user |
+| 38 | 重置用户密码 | POST | /api/system/user/reset-password |
+| 39 | 角色分页列表查询 | POST | /api/system/role/page |
+| 40 | 新增角色 | POST | /api/system/role |
+| 41 | 角色详情查询 | GET | /api/system/role/detail |
+| 42 | 编辑角色 | PUT | /api/system/role |
+| 43 | 删除角色 | DELETE | /api/system/role |
+| 44 | 查询角色已有权限 | GET | /api/system/role/permissions |
+| 45 | 保存角色权限分配 | POST | /api/system/role/permissions |
+| 46 | 科室分页列表查询 | POST | /api/system/department/page |
+| 47 | 科室公共字典接口 | GET | /api/system/department/dicts |
+| 48 | 新增科室 | POST | /api/system/department |
+| 49 | 科室详情查询 | GET | /api/system/department/detail |
+| 50 | 编辑科室 | PUT | /api/system/department |
+| 51 | 删除科室 | DELETE | /api/system/department |
+| 52 | 工作台全局概览统计 | GET | /api/workbench/overview |
+| 53 | 待处理预警分页列表 | POST | /api/workbench/pending-alerts/page |
+| 54 | 最新心电记录分页查询 | POST | /api/workbench/latest-ecg/page |
+| 55 | 预警详情查询 | GET | /api/workbench/alerts/{alertId} |
+| 56 | 单条心电数据详情 | GET | /api/workbench/ecg/{ecgId} |
+| 57 | 工作台公共筛选字典 | GET | /api/workbench/dicts |
+| 58 | 心电数据分页列表查询 | POST | /api/ecg-data/page |
+| 59 | 心电数据上传 | POST | /api/ecg-data/upload |
+| 60 | 心电数据详情查询 | GET | /api/ecg-data/{ecgId} |
+| 61 | 心电数据状态更新 | PUT | /api/ecg-data/status |
+| 62 | 心电数据筛选字典 | GET | /api/ecg-data/dicts |
+| 63 | 原始心电波形数据获取 | GET | /api/ecg-data/{ecgId}/waveform |
+| 64 | AI诊断全局统计概览 | GET | /api/analysis/ai-diagnosis/overview |
+| 65 | AI诊断记录分页查询 | POST | /api/analysis/ai-diagnosis/page |
+| 66 | AI诊断审核状态字典 | GET | /api/analysis/ai-diagnosis/dicts |
+| 67 | AI诊断详情查询 | GET | /api/analysis/ai-diagnosis/{diagnosisId} |
+| 68 | AI诊断原始心电波形数据 | GET | /api/analysis/ai-diagnosis/ecg/{ecgId}/waveform |
+| 69 | 医生审核提交 | POST | /api/analysis/ai-diagnosis/audit |
+| 70 | 诊断报告分页列表查询 | POST | /api/analysis/diagnosis-report/page |
+| 71 | 诊断报告筛选字典 | GET | /api/analysis/diagnosis-report/dicts |
+| 72 | 单条诊断报告详情查询 | GET | /api/analysis/diagnosis-report/{reportId} |
+| 73 | 诊断报告PDF下载 | GET | /api/analysis/diagnosis-report/{reportId}/pdf |
+| 74 | 患者公共筛选字典 | GET | /api/patient/dicts |
 
 ---
 
@@ -2231,6 +2232,7 @@ Authorization: Bearer <token>
 |---|---|---|---|---|
 | deviceId | long | 否 | 空 | 设备ID |
 | status | string | 否 | 空 | 质控结果（通过/未通过 或 1/2） |
+| testType | string | 否 | 空 | 测试类型（日检/周检/月检/远程检测 或 1/2/3/4） |
 | startTime | string | 否 | 空 | 起始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
 | endTime | string | 否 | 空 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
 | pageNum | long | 否 | 1 | 页码 |
@@ -2269,6 +2271,7 @@ Content-Type: application/json
 
 {
   "deviceId": 1804,
+  "testType": "周检",
   "status": "未通过",
   "startTime": "2026-04-18",
   "endTime": "2026-04-18",
@@ -2633,9 +2636,59 @@ Authorization: Bearer <token>
 
 ---
 
+## 18.6 删除质控记录
+
+### 18.6.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 删除质控记录 |
+| 业务作用 | 删除单条质控记录（逻辑删除） |
+| 请求路径 | /api/monitor/quality-control |
+| 请求方式 | DELETE |
+| Content-Type | application/json |
+| 权限码 | monitor:quality:delete |
+
+### 18.6.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | qcId | long | 是 | 质控记录ID |
+
+### 18.6.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| qcId | long | 删除的质控记录ID |
+| deleted | boolean | 是否删除成功（固定 true） |
+
+### 18.6.4 请求示例
+
+```http
+DELETE /api/monitor/quality-control?qcId=2804 HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+```
+
+### 18.6.5 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "qcId": 2804,
+    "deleted": true
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
 ## 19. 质控管理业务规则
 
-1. 质控记录采用逻辑删除模型（is_deleted），本阶段仅提供新增、编辑、查询，不开放删除接口。
+1. 质控记录采用逻辑删除模型（is_deleted），提供新增、编辑、查询、删除接口；删除后记录不再参与查询。
 2. 新增/编辑时必须校验 deviceId 存在且未删除；deviceName、deptId、deptName 统一由设备主档回填，防止前端脏写。
 3. testType 支持中文枚举与数字编码双输入，统一落库为中文值（日检/周检/月检/远程检测）。
 4. deviceStatus 与 testResult 支持中文枚举与数字编码双输入，统一落库为中文值（正常/异常、通过/未通过）。
@@ -4926,8 +4979,9 @@ list[] 字段：
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | file | file | 是 | 原始心电文件 |
-| deviceId | long | 是 | 关联设备 ID |
-| patientId | long | 是 | 关联患者 ID |
+| patientName | string | 是 | 患者姓名 |
+| inpatientNo | string | 是 | 住院号 |
+| deviceNo | string | 是 | 设备编号 |
 
 ### 34.2.3 出参说明
 
@@ -5076,8 +5130,10 @@ points[] 字段：
 | 时间区间非法 | 400 | startTime cannot be later than endTime |
 | status / targetStatus 非法 | 400 | status parameter is invalid |
 | 上传文件为空 | 400 | file is required |
-| patientId 不存在 | 404 | patient not found |
-| deviceId 不存在 | 404 | device not found |
+| patientName / inpatientNo 参数非法 | 400 | patientName parameter is invalid |
+| deviceNo 参数非法 | 400 | deviceNo parameter is invalid |
+| 患者不存在（patientName + inpatientNo 未匹配） | 404 | patient not found |
+| deviceNo 不存在 | 404 | device not found |
 | 预警记录不存在 | 404 | alert record not found |
 | 心电数据不存在 | 404 | ecg data not found |
 | 未登录或 token 失效 | 401 | 未认证或登录已失效 |

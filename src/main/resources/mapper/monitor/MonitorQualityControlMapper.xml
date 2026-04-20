@@ -28,6 +28,9 @@
         <if test="statusText != null and statusText != ''">
             AND q.test_result = #{statusText}
         </if>
+        <if test="testTypeText != null and testTypeText != ''">
+            AND q.test_type = #{testTypeText}
+        </if>
         <if test="startTime != null">
             AND q.test_time <![CDATA[>=]]> #{startTime}
         </if>
@@ -113,6 +116,14 @@
             device_status = #{deviceStatus},
             test_result = #{testResult},
             remark = #{remark},
+            update_time = NOW()
+        WHERE qc_id = #{qcId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="logicalDeleteQualityControl">
+        UPDATE ecg_device_quality_control
+        SET is_deleted = 1,
             update_time = NOW()
         WHERE qc_id = #{qcId}
           AND is_deleted = 0

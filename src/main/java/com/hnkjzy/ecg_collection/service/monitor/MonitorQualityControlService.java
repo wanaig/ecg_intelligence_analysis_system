@@ -4,6 +4,7 @@ import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlCreateDt
 import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlUpdateDto;
 import com.hnkjzy.ecg_collection.model.vo.common.PageResultVo;
+import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeleteResultVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDictVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlPageItemVo;
@@ -21,6 +22,8 @@ public interface MonitorQualityControlService extends BaseService {
     MonitorQualityControlDetailVo createQualityControl(MonitorQualityControlCreateDto createDto);
 
     MonitorQualityControlDetailVo updateQualityControl(MonitorQualityControlUpdateDto updateDto);
+
+    MonitorQualityControlDeleteResultVo deleteQualityControl(Long qcId);
 
     MonitorQualityControlDetailVo getQualityControlDetail(Long qcId);
 }

@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/system/department")
+@RequestMapping({"/api/system/department", "/system/department"})
 public class SystemDepartmentController extends BaseController {
 
     private final SystemDepartmentService systemDepartmentService;

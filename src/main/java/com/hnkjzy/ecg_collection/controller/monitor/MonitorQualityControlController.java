@@ -6,11 +6,13 @@ import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlCreateDt
 import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.monitor.MonitorQualityControlUpdateDto;
 import com.hnkjzy.ecg_collection.model.vo.common.PageResultVo;
+import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDeleteResultVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlDictVo;
 import com.hnkjzy.ecg_collection.model.vo.monitor.MonitorQualityControlPageItemVo;
 import com.hnkjzy.ecg_collection.service.monitor.MonitorQualityControlService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/monitor/quality-control")
+@RequestMapping({"/api/monitor/quality-control", "/monitor/quality-control"})
 public class MonitorQualityControlController extends BaseController {
 
     private final MonitorQualityControlService monitorQualityControlService;
@@ -47,6 +49,11 @@ public class MonitorQualityControlController extends BaseController {
     @PutMapping
     public ApiResponse<MonitorQualityControlDetailVo> update(@RequestBody MonitorQualityControlUpdateDto updateDto) {
         return ApiResponse.success(monitorQualityControlService.updateQualityControl(updateDto));
+    }
+
+    @DeleteMapping
+    public ApiResponse<MonitorQualityControlDeleteResultVo> delete(@RequestParam("qcId") Long qcId) {
+        return ApiResponse.success(monitorQualityControlService.deleteQualityControl(qcId));
     }
 
     @GetMapping("/detail")

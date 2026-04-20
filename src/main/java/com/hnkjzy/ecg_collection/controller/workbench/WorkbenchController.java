@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/workbench")
+@RequestMapping({"/api/workbench", "/workbench"})
 public class WorkbenchController extends BaseController {
 
     private final WorkbenchService workbenchService;
