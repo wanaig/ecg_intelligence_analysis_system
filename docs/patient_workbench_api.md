@@ -177,6 +177,29 @@
 | 48 | 科室详情查询 | GET | /api/system/department/detail |
 | 49 | 编辑科室 | PUT | /api/system/department |
 | 50 | 删除科室 | DELETE | /api/system/department |
+| 51 | 工作台全局概览统计 | GET | /api/workbench/overview |
+| 52 | 待处理预警分页列表 | POST | /api/workbench/pending-alerts/page |
+| 53 | 最新心电记录分页查询 | POST | /api/workbench/latest-ecg/page |
+| 54 | 预警详情查询 | GET | /api/workbench/alerts/{alertId} |
+| 55 | 单条心电数据详情 | GET | /api/workbench/ecg/{ecgId} |
+| 56 | 工作台公共筛选字典 | GET | /api/workbench/dicts |
+| 57 | 心电数据分页列表查询 | POST | /api/ecg-data/page |
+| 58 | 心电数据上传 | POST | /api/ecg-data/upload |
+| 59 | 心电数据详情查询 | GET | /api/ecg-data/{ecgId} |
+| 60 | 心电数据状态更新 | PUT | /api/ecg-data/status |
+| 61 | 心电数据筛选字典 | GET | /api/ecg-data/dicts |
+| 62 | 原始心电波形数据获取 | GET | /api/ecg-data/{ecgId}/waveform |
+| 63 | AI诊断全局统计概览 | GET | /api/analysis/ai-diagnosis/overview |
+| 64 | AI诊断记录分页查询 | POST | /api/analysis/ai-diagnosis/page |
+| 65 | AI诊断审核状态字典 | GET | /api/analysis/ai-diagnosis/dicts |
+| 66 | AI诊断详情查询 | GET | /api/analysis/ai-diagnosis/{diagnosisId} |
+| 67 | AI诊断原始心电波形数据 | GET | /api/analysis/ai-diagnosis/ecg/{ecgId}/waveform |
+| 68 | 医生审核提交 | POST | /api/analysis/ai-diagnosis/audit |
+| 69 | 诊断报告分页列表查询 | POST | /api/analysis/diagnosis-report/page |
+| 70 | 诊断报告筛选字典 | GET | /api/analysis/diagnosis-report/dicts |
+| 71 | 单条诊断报告详情查询 | GET | /api/analysis/diagnosis-report/{reportId} |
+| 72 | 诊断报告PDF下载 | GET | /api/analysis/diagnosis-report/{reportId}/pdf |
+| 73 | 患者公共筛选字典 | GET | /api/patient/dicts |
 
 ---
 
@@ -570,6 +593,113 @@ Authorization: Bearer <token>
 
 ---
 
+## 4.4 患者公共筛选字典接口
+
+### 4.4.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 患者公共筛选字典 |
+| 业务作用 | 加载患者管理页面筛选下拉项（病区、风险等级、患者状态） |
+| 请求路径 | /api/patient/dicts |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | patient:dict:read |
+| 数据范围 | 返回系统启用病区与标准枚举 |
+
+### 4.4.2 请求入参
+
+无业务入参。
+
+### 4.4.3 出参说明
+
+#### data 顶层结构
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| wardOptions | array | 病区筛选字典 |
+| riskLevelOptions | array | 风险等级筛选字典 |
+| patientStatusOptions | array | 患者状态筛选字典 |
+
+#### wardOptions[] / riskLevelOptions[] / patientStatusOptions[] 字段
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| value | string | 字典值 |
+| label | string | 字典展示文本 |
+
+### 4.4.4 完整请求示例
+
+```http
+GET /api/patient/dicts HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+```
+
+### 4.4.5 完整响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "wardOptions": [
+      {
+        "value": "",
+        "label": "全部病区"
+      },
+      {
+        "value": "1501",
+        "label": "心内一病区"
+      }
+    ],
+    "riskLevelOptions": [
+      {
+        "value": "",
+        "label": "全部风险等级"
+      },
+      {
+        "value": "1",
+        "label": "低危"
+      },
+      {
+        "value": "2",
+        "label": "中危"
+      },
+      {
+        "value": "3",
+        "label": "中高危"
+      },
+      {
+        "value": "4",
+        "label": "高危"
+      }
+    ],
+    "patientStatusOptions": [
+      {
+        "value": "",
+        "label": "全部患者状态"
+      },
+      {
+        "value": "1",
+        "label": "住院中"
+      },
+      {
+        "value": "2",
+        "label": "出院"
+      },
+      {
+        "value": "3",
+        "label": "居家随访"
+      }
+    ]
+  },
+  "timestamp": 1776587656203
+}
+```
+
+---
+
 ## 5. 权限说明（建议落地方案）
 
 ### 5.1 权限点定义
@@ -579,6 +709,7 @@ Authorization: Bearer <token>
 | patient:dashboard:read | GET /api/patient/statistics | 查看顶部统计 |
 | patient:list:read | POST /api/patient/page | 查看患者分页列表 |
 | patient:detail:read | GET /api/patient/detail | 查看患者详情 |
+| patient:dict:read | GET /api/patient/dicts | 查看患者筛选字典 |
 
 ### 5.2 角色建议映射
 
@@ -4458,4 +4589,965 @@ Authorization: Bearer <token>
 | 存在下级子科室禁止删除 | 1000 | 存在下级子科室，禁止直接删除 |
 | 已绑定用户/设备但未确认删除 | 1000 | 科室已绑定用户或设备，请二次确认后删除（传 force=true） |
 | 未登录或 token 失效 | 401 | 未认证或登录已失效 |
+| 服务内部异常 | 5000 | 系统繁忙，请稍后重试 |
+
+---
+
+## 33. 工作台模块接口规范
+
+## 33.1 工作台全局概览统计接口
+
+### 33.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 工作台全局概览统计 |
+| 请求路径 | /api/workbench/overview |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | workbench:overview:read |
+
+### 33.1.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | timeType | string | 否 | 时间维度：today/week/month/year |
+| Query | startTime | string | 否 | 自定义开始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| Query | endTime | string | 否 | 自定义结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+
+### 33.1.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| ecgTotalCount | long | 心电图测量总次数 |
+| todayAddCount | long | 今日新增测量次数 |
+| pendingAnalyseCount | long | 待 AI 分析记录数 |
+| pendingAuditCount | long | 待审核报告数 |
+| alertTotalCount | long | 异常预警总数 |
+| alertHandledCount | long | 已处理预警数量 |
+
+### 33.1.4 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "ecgTotalCount": 1256,
+    "todayAddCount": 45,
+    "pendingAnalyseCount": 8,
+    "pendingAuditCount": 12,
+    "alertTotalCount": 11,
+    "alertHandledCount": 3
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 33.2 待处理预警分页列表接口
+
+### 33.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 待处理预警分页列表 |
+| 请求路径 | /api/workbench/pending-alerts/page |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | workbench:alert:page |
+
+### 33.2.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| timeType | string | 否 | 空 | 时间维度：today/week/month/year |
+| startTime | string | 否 | 空 | 开始时间 |
+| endTime | string | 否 | 空 | 结束时间 |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 33.2.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| list | array | 当前页数据 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| alertId | long | 预警 ID |
+| alertTime | string | 预警时间 |
+| patientInfo | string | 患者信息（姓名/性别/年龄） |
+| ward | string | 所属病区 |
+| alertType | string | 预警类型 |
+| alertLevel | string | 预警级别（高危/中危/低危） |
+| alertStatus | string | 预警状态 |
+| sourceType | string | 数据来源（动态心电图/静态心电图） |
+| clinicalSymptom | string | 患者临床表现 |
+| lisCheckData | string | LIS 检验异常数据摘要 |
+
+### 33.2.4 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "total": 2,
+    "list": [
+      {
+        "alertId": 2601,
+        "alertTime": "2026-04-18T08:40:00",
+        "patientInfo": "陈敏 / 女 / 49岁",
+        "ward": "冠心监护病区",
+        "alertType": "室性心动过速风险",
+        "alertLevel": "高危",
+        "alertStatus": "待处理",
+        "sourceType": "动态心电图",
+        "clinicalSymptom": "不明原因晕厥，伴胸闷",
+        "lisCheckData": "肌钙蛋白偏高；CK-MB偏高；建议急查电解质"
+      }
+    ]
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 33.3 最新心电记录分页查询接口
+
+### 33.3.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 最新心电记录分页查询 |
+| 请求路径 | /api/workbench/latest-ecg/page |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | workbench:ecg:page |
+
+### 33.3.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| timeType | string | 否 | 空 | 时间维度：today/week/month/year |
+| startTime | string | 否 | 空 | 开始时间 |
+| endTime | string | 否 | 空 | 结束时间 |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 33.3.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| list | array | 当前页数据 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| ecgId | long | 心电数据 ID |
+| collectTime | string | 采集时间 |
+| patientInfo | string | 患者信息 |
+| ward | string | 病区 |
+| deviceNo | string | 采集设备 |
+| status | string | 数据状态 |
+| aiConclusion | string | AI 诊断结论 |
+
+---
+
+## 33.4 预警详情查询接口
+
+### 33.4.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 预警详情查询 |
+| 请求路径 | /api/workbench/alerts/{alertId} |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | workbench:alert:detail |
+
+### 33.4.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | alertId | long | 是 | 预警唯一 ID |
+
+### 33.4.3 出参说明
+
+返回完整预警全量信息，包含患者档案、预警详情、动态心电来源、临床表现、LIS 异常摘要、历史心电数据。
+
+关键字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| alertId | long | 预警 ID |
+| alertTime | string | 预警时间 |
+| alertType | string | 预警类型 |
+| alertLevel | string | 预警等级 |
+| alertStatus | string | 预警状态 |
+| patientId | long | 患者 ID |
+| patientName | string | 患者姓名 |
+| gender | string | 性别 |
+| age | integer | 年龄 |
+| inpatientNo | string | 住院号 |
+| ward | string | 病区 |
+| bedNo | string | 床号 |
+| primaryDiagnosis | string | 患者主要诊断 |
+| sourceType | string | 来源类型 |
+| sourceRecordId | long | 来源心电记录 ID |
+| sourceEcgNo | string | 来源心电编号 |
+| sourceDeviceName | string | 来源设备名称 |
+| sourceCollectTime | string | 来源采集时间 |
+| clinicalSymptom | string | 临床表现 |
+| lisCheckData | string | LIS 异常摘要 |
+| historyEcgList | array | 历史心电数据 |
+
+---
+
+## 33.5 单条心电数据详情接口
+
+### 33.5.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 单条心电数据详情 |
+| 请求路径 | /api/workbench/ecg/{ecgId} |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | workbench:ecg:detail |
+
+### 33.5.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | ecgId | long | 是 | 心电数据唯一 ID |
+
+### 33.5.3 出参说明
+
+返回患者基础信息、采集信息、原始数据文件地址、AI 完整诊断结论与波形预览点。
+
+---
+
+## 33.6 公共筛选字典接口
+
+### 33.6.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 工作台公共筛选字典 |
+| 请求路径 | /api/workbench/dicts |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | workbench:dict:read |
+
+### 33.6.2 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| timeTypeOptions | array | 时间周期枚举 |
+| alertLevelOptions | array | 预警级别字典 |
+| alertStatusOptions | array | 预警状态字典 |
+| deviceTypeOptions | array | 设备类型字典 |
+
+---
+
+## 34. 心电数据列表模块接口规范
+
+## 34.1 心电数据分页列表查询（主接口）
+
+### 34.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 心电数据分页列表查询 |
+| 请求路径 | /api/ecg-data/page |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | ecg:data:page |
+
+### 34.1.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| keyword | string | 否 | 空 | 患者姓名/住院号/设备编号/心电编号 |
+| wardId | long | 否 | 空 | 病区 ID |
+| status | string | 否 | 空 | 状态：待分析/已分析/已审核 |
+| startTime | string | 否 | 空 | 开始时间 |
+| endTime | string | 否 | 空 | 结束时间 |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 34.1.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| list | array | 当前页数据 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| ecgId | long | 心电数据 ID |
+| ecgNo | string | 心电编号 |
+| collectTime | string | 采集时间 |
+| patientInfo | string | 患者信息 |
+| patientName | string | 患者姓名 |
+| inpatientNo | string | 住院号 |
+| ward | string | 病区 |
+| deviceNo | string | 设备编号/名称 |
+| status | string | 状态 |
+| aiConclusion | string | AI 结论 |
+
+---
+
+## 34.2 数据上传接口
+
+### 34.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 数据上传 |
+| 请求路径 | /api/ecg-data/upload |
+| 请求方式 | POST |
+| Content-Type | multipart/form-data |
+| 权限码 | ecg:data:upload |
+
+### 34.2.2 请求入参
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| file | file | 是 | 原始心电文件 |
+| deviceId | long | 是 | 关联设备 ID |
+| patientId | long | 是 | 关联患者 ID |
+
+### 34.2.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| ecgId | long | 新增心电记录 ID |
+| ecgNo | string | 心电编号 |
+| status | string | 当前状态 |
+| aiQueueTriggered | boolean | 是否已触发 AI 分析队列 |
+| uploadTime | string | 上传时间 |
+
+---
+
+## 34.3 心电数据详情查询
+
+### 34.3.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 心电数据详情查询 |
+| 请求路径 | /api/ecg-data/{ecgId} |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | ecg:data:detail |
+
+### 34.3.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | ecgId | long | 是 | 心电数据 ID |
+
+### 34.3.3 出参说明
+
+返回患者基础信息、采集信息、原始心电数据入口、AI 完整诊断结论与波形预览。
+
+---
+
+## 34.4 数据状态更新接口
+
+### 34.4.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 数据状态更新 |
+| 请求路径 | /api/ecg-data/status |
+| 请求方式 | PUT |
+| Content-Type | application/json |
+| 权限码 | ecg:data:status:update |
+
+### 34.4.2 请求入参
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| ecgId | long | 是 | 心电数据 ID |
+| targetStatus | string | 是 | 目标状态：待分析/已分析/已审核 |
+
+### 34.4.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| ecgId | long | 心电数据 ID |
+| targetStatus | string | 更新后的状态 |
+| updated | boolean | 是否更新成功 |
+
+---
+
+## 34.5 公共字典接口（筛选项）
+
+### 34.5.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 心电数据筛选字典 |
+| 请求路径 | /api/ecg-data/dicts |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | ecg:data:dict:read |
+
+### 34.5.2 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| wardOptions | array | 病区列表 |
+| deviceOptions | array | 设备列表 |
+| statusOptions | array | 状态枚举 |
+
+---
+
+## 34.6 原始心电波形数据获取接口
+
+### 34.6.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 原始心电波形数据获取 |
+| 请求路径 | /api/ecg-data/{ecgId}/waveform |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | ecg:data:waveform:read |
+
+### 34.6.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | ecgId | long | 是 | 心电数据 ID |
+
+### 34.6.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| ecgId | long | 心电数据 ID |
+| ecgNo | string | 心电编号 |
+| samplingRate | integer | 采样率 |
+| leadCount | integer | 导联数 |
+| rawDataFileUrl | string | 原始数据文件地址 |
+| collectStartTime | string | 采集开始时间 |
+| collectEndTime | string | 采集结束时间 |
+| points | array | 波形点数据 |
+
+points[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| pointIndex | integer | 点位索引 |
+| pointValue | number | 点位值 |
+
+---
+
+## 35. 工作台与心电数据模块业务规则
+
+1. 时间过滤统一优先级：startTime/endTime > timeType > 全量。
+2. timeType 支持 today/week/month/year 与中英文等价输入。
+3. 待处理预警列表仅返回 handle_status in (0,1,2) 的预警记录。
+4. 心电数据分页状态筛选与 display_status 对应：待分析=0，已分析=1，已审核=2。
+5. 数据上传后默认进入待分析状态，并返回 aiQueueTriggered=true 表示已触发 AI 队列。
+6. 数据状态更新会联动 ai_analysis_status、report_status、display_status，确保列表状态一致。
+7. 原始波形接口返回采样元数据与点位集合，供 AI 诊断中心、详情页直接绘图。
+
+## 36. 工作台与心电数据模块错误场景
+
+| 场景 | code | message 示例 |
+|---|---|---|
+| alertId / ecgId 非法 | 400 | alertId parameter is invalid |
+| timeType 非法 | 400 | timeType parameter is invalid |
+| 时间格式错误 | 400 | time format is invalid |
+| 时间区间非法 | 400 | startTime cannot be later than endTime |
+| status / targetStatus 非法 | 400 | status parameter is invalid |
+| 上传文件为空 | 400 | file is required |
+| patientId 不存在 | 404 | patient not found |
+| deviceId 不存在 | 404 | device not found |
+| 预警记录不存在 | 404 | alert record not found |
+| 心电数据不存在 | 404 | ecg data not found |
+| 未登录或 token 失效 | 401 | 未认证或登录已失效 |
+| 服务内部异常 | 5000 | 系统繁忙，请稍后重试 |
+
+---
+
+## 37. AI诊断中心模块接口规范
+
+## 37.1 AI诊断全局统计概览接口
+
+### 37.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI诊断全局统计概览 |
+| 请求路径 | /api/analysis/ai-diagnosis/overview |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:overview |
+
+### 37.1.2 请求入参
+
+无业务入参（按当前登录用户权限返回可见数据）。
+
+### 37.1.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| totalCount | long | 诊断总数 |
+| pendingAuditCount | long | 待审核数量 |
+| auditedCount | long | 已审核数量 |
+| avgConfidence | number | AI诊断平均置信度 |
+
+### 37.1.4 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "totalCount": 4,
+    "pendingAuditCount": 2,
+    "auditedCount": 2,
+    "avgConfidence": 90.0
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 37.2 AI诊断记录分页查询接口
+
+### 37.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI诊断记录分页查询 |
+| 请求路径 | /api/analysis/ai-diagnosis/page |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:page |
+
+### 37.2.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| ecgNo | string | 否 | 空 | 心电图编号 |
+| patientName | string | 否 | 空 | 患者姓名 |
+| status | string | 否 | 空 | 审核状态：待审核/已审核 |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 37.2.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| pages | long | 总页数 |
+| list | array | 当前页数据 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| diagnosisId | string | 诊断唯一编号 |
+| ecgId | long | 心电记录 ID |
+| ecgNo | string | 心电图编号 |
+| patientInfo | string | 患者信息（姓名/年龄/性别） |
+| hospitalNo | string | 住院号 |
+| deptName | string | 科室/病区名称 |
+| aiVersion | string | AI模型版本 |
+| aiConclusion | string | AI结论 |
+| abnormalCount | integer | 异常点数量 |
+| confidence | number | 置信度 |
+| diagnosisTime | string | 诊断时间 |
+| status | string | 审核状态 |
+
+---
+
+## 37.3 审核状态公共字典接口
+
+### 37.3.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI诊断审核状态字典 |
+| 请求路径 | /api/analysis/ai-diagnosis/dicts |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:dict |
+
+### 37.3.2 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| statusList | array | 审核状态下拉字典 |
+
+statusList[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| label | string | 展示名称 |
+| value | string | 字典值 |
+
+---
+
+## 37.4 单条诊断详情查询接口
+
+### 37.4.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI诊断详情查询 |
+| 请求路径 | /api/analysis/ai-diagnosis/{diagnosisId} |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:detail |
+
+### 37.4.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | diagnosisId | string | 是 | 诊断唯一编号（支持 diagnosis_no 或 ai_diagnosis_id） |
+
+### 37.4.3 出参说明
+
+返回单条 AI 诊断完整数据：
+
+1. 诊断基础信息（诊断编号、模型版本、时间、置信度）。
+2. 关联患者信息（姓名、性别、年龄、住院号、科室）。
+3. 关联心电基础信息（导联数、采样率、采集时间、原始数据入口）。
+4. 全部异常点位说明（abnormalPointList）。
+5. 审核与报告信息（报告编号、审核状态、审核医生、审核时间、医生终审结论）。
+
+---
+
+## 37.5 原始心电波形数据接口
+
+### 37.5.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI诊断原始心电波形数据 |
+| 请求路径 | /api/analysis/ai-diagnosis/ecg/{ecgId}/waveform |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:waveform |
+
+### 37.5.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | ecgId | long | 是 | 心电记录 ID |
+
+### 37.5.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| ecgId | long | 心电记录 ID |
+| ecgNo | string | 心电编号 |
+| samplingRate | integer | 采样率 |
+| leadCount | integer | 导联数 |
+| rawDataFileUrl | string | 原始数据文件路径 |
+| collectStartTime | string | 采集开始时间 |
+| collectEndTime | string | 采集结束时间 |
+| waveform | array | 波形点数组 |
+| segments | array | 波段图谱（P/QRS/T） |
+| annotations | array | 异常标注点位 |
+
+waveform[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| pointIndex | integer | 点位索引 |
+| pointValue | number | 点位值 |
+
+segments[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| segmentType | string | 波段类型（P/QRS/T） |
+| startIndex | integer | 起始点位 |
+| endIndex | integer | 结束点位 |
+
+annotations[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| pointIndex | integer | 标注点位 |
+| label | string | 异常标签 |
+| level | string | 风险等级 |
+
+---
+
+## 37.6 医生审核提交接口
+
+### 37.6.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 医生审核提交 |
+| 请求路径 | /api/analysis/ai-diagnosis/audit |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | report:audit / diagnosis:write |
+
+### 37.6.2 请求入参
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| diagnosisId | string | 是 | 诊断编号 |
+| doctorConclusion | string | 是 | 医生终审结论 |
+
+### 37.6.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| diagnosisId | string | 诊断编号 |
+| status | string | 审核后状态（已审核） |
+| auditedBy | string | 审核医生 |
+| auditedTime | string | 审核时间 |
+| reportDraftId | long | 关联报告草稿/报告 ID |
+| reportNo | string | 报告编号 |
+
+### 37.6.4 业务规则
+
+1. 校验当前登录医生身份与审核权限（基于 Token 与角色权限）。
+2. 仅允许“待审核”记录提交审核，已审核记录禁止重复提交。
+3. 审核成功后状态流转：待审核 -> 已审核。
+4. 写入审核医生、审核时间、医生终审结论与审核意见。
+5. 若不存在报告记录则自动生成草稿并落库；存在记录则更新审核结果。
+6. 同步更新心电采集记录状态：report_status=2，display_status=2。
+
+---
+
+## 38. AI诊断中心模块错误场景
+
+| 场景 | code | message 示例 |
+|---|---|---|
+| diagnosisId 参数非法 | 400 | diagnosisId 参数不合法 |
+| ecgId 参数非法 | 400 | ecgId 参数不合法 |
+| status 参数非法 | 400 | status 参数不合法 |
+| doctorConclusion 为空 | 400 | doctorConclusion 参数不合法 |
+| doctorConclusion 过长 | 400 | doctorConclusion 长度不能超过 2000 |
+| AI诊断记录不存在 | 404 | AI 诊断记录不存在 |
+| 心电记录不存在 | 404 | 心电记录不存在 |
+| Token 缺失或失效 | 401 | 未认证或登录已失效 |
+| 当前用户无审核权限 | 403 | 无 AI 诊断审核权限 |
+| 已审核记录重复提交 | 400 | 该诊断记录已审核，不能重复提交 |
+| 服务内部异常 | 5000 | 系统繁忙，请稍后重试 |
+
+---
+
+## 39. 诊断报告管理模块接口规范
+
+## 39.1 诊断报告分页列表查询接口
+
+### 39.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 诊断报告分页列表查询 |
+| 请求路径 | /api/analysis/diagnosis-report/page |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:diagnosis-report:page |
+
+### 39.1.2 请求入参
+
+```json
+{
+  "reportNo": "",
+  "patientName": "",
+  "status": "",
+  "pageNum": 1,
+  "pageSize": 10
+}
+```
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| reportNo | string | 否 | 空 | 报告编号（模糊匹配） |
+| patientName | string | 否 | 空 | 患者姓名（模糊匹配） |
+| status | string | 否 | 空 | 报告状态：待生成/已审核 |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 39.1.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| pages | long | 总页数 |
+| list | array | 当前页记录 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| reportId | long | 报告唯一 ID |
+| reportNo | string | 报告编号 |
+| patientInfo | string | 患者信息（姓名/年龄/性别） |
+| hospitalNo | string | 住院号 |
+| collectionTime | string | 采集时间 |
+| aiConclusion | string | AI 结论 |
+| doctorConclusion | string | 医生结论 |
+| auditDoctorName | string | 审核医生 |
+| auditTime | string | 审核时间 |
+| status | string | 报告状态（待生成/已审核） |
+
+### 39.1.4 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "total": 5,
+    "pages": 1,
+    "list": [
+      {
+        "reportId": 2301,
+        "reportNo": "REP20260418001",
+        "patientInfo": "张建国/67岁/男",
+        "hospitalNo": "ZY202604001",
+        "collectionTime": "2026-04-18T08:00:00",
+        "aiConclusion": "窦性心律，偶发室性早搏，建议结合临床复核",
+        "doctorConclusion": "偶发室早，继续药物治疗并复查",
+        "auditDoctorName": "孙主任",
+        "auditTime": "2026-04-18T08:45:00",
+        "status": "已审核"
+      }
+    ]
+  },
+  "timestamp": 1776502056203
+}
+```
+
+---
+
+## 39.2 公共筛选字典接口
+
+### 39.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 诊断报告筛选字典 |
+| 请求路径 | /api/analysis/diagnosis-report/dicts |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:diagnosis-report:dict |
+
+### 39.2.2 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| statusList | array | 报告状态枚举 |
+
+statusList[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| label | string | 展示名称 |
+| value | string | 字典值 |
+
+返回示例：
+
+1. 全部状态
+2. 待生成
+3. 已审核
+
+---
+
+## 39.3 单条报告详情查询接口
+
+### 39.3.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 单条诊断报告详情查询 |
+| 请求路径 | /api/analysis/diagnosis-report/{reportId} |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:diagnosis-report:detail |
+
+### 39.3.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | reportId | long | 是 | 报告唯一 ID |
+
+### 39.3.3 出参说明
+
+返回全量报告字段，覆盖：
+
+1. 患者基础信息（patientName、gender、age、hospitalNo）。
+2. 采集时间（collectionTime）。
+3. AI 原始诊断结论（aiConclusion）。
+4. 医生终审结论（doctorConclusion）与医生建议（doctorSuggestion）。
+5. 报告生成信息（reportCreateDoctorName、reportCreateTime）。
+6. 审核信息（auditDoctorName、auditTime、auditOpinion）。
+
+---
+
+## 39.4 报告 PDF 下载接口
+
+### 39.4.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 诊断报告PDF下载 |
+| 请求路径 | /api/analysis/diagnosis-report/{reportId}/pdf |
+| 请求方式 | GET |
+| Content-Type | application/pdf |
+| 权限码 | analysis:diagnosis-report:download |
+
+### 39.4.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | reportId | long | 是 | 报告唯一 ID |
+
+### 39.4.3 响应说明
+
+1. 响应头为 application/pdf。
+2. 服务端基于报告详情动态合成 PDF 内容。
+3. 响应头 Content-Disposition 为 attachment，前端可直接触发浏览器下载。
+
+---
+
+## 39.5 报告打印接口说明
+
+打印场景不新增独立后端接口，直接复用 [39.3 单条报告详情查询接口] 返回数据进行前端打印排版。
+
+推荐前端处理流程：
+
+1. 调用详情接口加载完整报告数据。
+2. 按打印模板渲染页面（A4 版式）。
+3. 调用浏览器 print API 输出打印。
+
+---
+
+## 40. 诊断报告管理模块错误场景
+
+| 场景 | code | message 示例 |
+|---|---|---|
+| reportId 参数非法 | 400 | reportId 参数不合法 |
+| status 参数非法 | 400 | status 参数不合法 |
+| 诊断报告不存在 | 404 | 诊断报告不存在 |
+| 报告 PDF 生成失败 | 5000 | 报告 PDF 生成失败 |
 | 服务内部异常 | 5000 | 系统繁忙，请稍后重试 |

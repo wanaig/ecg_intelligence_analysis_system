@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.mapper.BaseMapperX;
 import com.hnkjzy.ecg_collection.model.dto.patient.PatientPageQueryDto;
 import com.hnkjzy.ecg_collection.model.entity.patient.PatientInfoEntity;
+import com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientBasicInfoVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientDashboardStatVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientDiagnosisVo;
@@ -34,4 +35,6 @@ public interface PatientInfoMapper extends BaseMapperX<PatientInfoEntity> {
     List<PatientWarningVo> selectPatientWarningHistory(@Param("patientId") Long patientId);
 
     List<PatientDiagnosisVo> selectPatientDiagnosisInfo(@Param("patientId") Long patientId);
+
+    List<DictOptionVo> selectWardOptions();
 }

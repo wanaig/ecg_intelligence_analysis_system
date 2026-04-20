@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.workbench.WorkbenchMapper">
+
+    <select id="selectOverview" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.WorkbenchOverviewStatVo">
+        SELECT
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                WHERE c.is_deleted = 0
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS ecgTotalCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                WHERE c.is_deleted = 0
+                  AND c.collection_start_time <![CDATA[>=]]> CURDATE()
+                  AND c.collection_start_time <![CDATA[<]]> DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+            ) AS todayAddCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                WHERE c.is_deleted = 0
+                  AND c.ai_analysis_status IN (0, 1)
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS pendingAnalyseCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                WHERE c.is_deleted = 0
+                  AND c.report_status = 1
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS pendingAuditCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS alertTotalCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                  AND w.handle_status = 3
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS alertHandledCount
+    </select>
+
+    <select id="selectPendingAlertPage" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.WorkbenchPendingAlertItemVo">
+        SELECT
+            w.warning_id AS alertId,
+            w.warning_time AS alertTime,
+            CONCAT(
+                COALESCE(w.patient_name, ''),
+                ' / ',
+                COALESCE(w.gender,
+                         CASE p.gender
+                             WHEN 1 THEN '男'
+                             WHEN 2 THEN '女'
+                             ELSE '未知'
+                         END),
+                ' / ',
+                COALESCE(w.age, p.age, 0),
+                '岁'
+            ) AS patientInfo,
+            COALESCE(w.dept_name, '未知病区') AS ward,
+            COALESCE(w.warning_type, '-') AS alertType,
+            CASE w.warning_level
+                WHEN 3 THEN '高危'
+                WHEN 2 THEN '中危'
+                WHEN 1 THEN '低危'
+                ELSE '未知'
+            END AS alertLevel,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS alertStatus,
+            CASE
+                WHEN c.collection_type IN (2, 3) THEN '动态心电图'
+                ELSE '静态心电图'
+            END AS sourceType,
+            COALESCE(NULLIF(p.primary_diagnosis, ''), NULLIF(w.warning_desc, ''), '暂无临床表现记录') AS clinicalSymptom,
+            CASE w.warning_level
+                WHEN 3 THEN '肌钙蛋白偏高；CK-MB偏高；建议急查电解质'
+                WHEN 2 THEN '心肌酶谱轻度异常；建议复查肌钙蛋白'
+                WHEN 1 THEN '建议结合常规检验复核'
+                ELSE '暂无LIS异常提示'
+            END AS lisCheckData
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+                 LEFT JOIN ecg_collection_record c ON w.record_id = c.record_id AND c.is_deleted = 0
+        WHERE w.is_deleted = 0
+          AND w.handle_status IN (0, 1, 2)
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<]]> #{endTime}
+        </if>
+        ORDER BY w.warning_time DESC, w.warning_id DESC
+    </select>
+
+    <select id="selectLatestEcgPage" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.WorkbenchLatestEcgItemVo">
+        SELECT
+            c.record_id AS ecgId,
+            c.collection_start_time AS collectTime,
+            CONCAT(
+                COALESCE(c.patient_name, ''),
+                ' / ',
+                COALESCE(c.gender, '未知'),
+                ' / ',
+                COALESCE(c.age, 0),
+                '岁'
+            ) AS patientInfo,
+            COALESCE(c.dept_name, '未知病区') AS ward,
+            COALESCE(c.device_name, c.device_id) AS deviceNo,
+            CASE c.display_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '已分析'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '采集失败'
+                ELSE '未知'
+            END AS status,
+            COALESCE(NULLIF(c.ai_conclusion_short, ''), NULLIF(a.ai_conclusion, ''), '-') AS aiConclusion
+        FROM ecg_collection_record c
+                 LEFT JOIN ecg_ai_diagnosis a ON a.record_id = c.record_id AND a.is_deleted = 0
+        WHERE c.is_deleted = 0
+        <if test="startTime != null">
+            AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND c.collection_start_time <![CDATA[<]]> #{endTime}
+        </if>
+        ORDER BY c.collection_start_time DESC, c.record_id DESC
+    </select>
+
+    <select id="selectAlertDetail" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.WorkbenchAlertDetailVo">
+        SELECT
+            w.warning_id AS alertId,
+            w.warning_time AS alertTime,
+            w.warning_type AS alertType,
+            CASE w.warning_level
+                WHEN 3 THEN '高危'
+                WHEN 2 THEN '中危'
+                WHEN 1 THEN '低危'
+                ELSE '未知'
+            END AS alertLevel,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS alertStatus,
+            w.patient_id AS patientId,
+            w.patient_name AS patientName,
+            COALESCE(w.gender,
+                     CASE p.gender
+                         WHEN 1 THEN '男'
+                         WHEN 2 THEN '女'
+                         ELSE '未知'
+                     END) AS gender,
+            COALESCE(w.age, p.age) AS age,
+            COALESCE(w.inpatient_no, p.inpatient_no) AS inpatientNo,
+            COALESCE(w.dept_name, c.dept_name) AS ward,
+            COALESCE(w.bed_no, c.bed_no, b.bed_no) AS bedNo,
+            p.primary_diagnosis AS primaryDiagnosis,
+            CASE
+                WHEN c.collection_type IN (2, 3) THEN '动态心电图'
+                ELSE '静态心电图'
+            END AS sourceType,
+            c.record_id AS sourceRecordId,
+            c.ecg_no AS sourceEcgNo,
+            c.device_name AS sourceDeviceName,
+            c.collection_start_time AS sourceCollectTime,
+            COALESCE(NULLIF(p.primary_diagnosis, ''), NULLIF(w.warning_desc, ''), '暂无临床表现记录') AS clinicalSymptom,
+            CASE w.warning_level
+                WHEN 3 THEN '肌钙蛋白偏高；CK-MB偏高；建议急查电解质'
+                WHEN 2 THEN '心肌酶谱轻度异常；建议复查肌钙蛋白'
+                WHEN 1 THEN '建议结合常规检验复核'
+                ELSE '暂无LIS异常提示'
+            END AS lisCheckData
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+                 LEFT JOIN ecg_collection_record c ON w.record_id = c.record_id AND c.is_deleted = 0
+                 LEFT JOIN sys_bed b ON p.bed_id = b.bed_id AND b.is_deleted = 0
+        WHERE w.warning_id = #{alertId}
+          AND w.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectAlertHistoryEcg" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.WorkbenchHistoryEcgItemVo">
+        SELECT
+            c.record_id AS ecgId,
+            c.ecg_no AS ecgNo,
+            c.collection_start_time AS collectTime,
+            c.device_name AS deviceName,
+            CASE c.display_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '已分析'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '采集失败'
+                ELSE '未知'
+            END AS status,
+            COALESCE(NULLIF(c.ai_conclusion_short, ''), NULLIF(a.ai_conclusion, ''), '-') AS aiConclusion
+        FROM ecg_collection_record c
+                 LEFT JOIN ecg_ai_diagnosis a ON a.record_id = c.record_id AND a.is_deleted = 0
+        WHERE c.patient_id = #{patientId}
+          AND c.is_deleted = 0
+        ORDER BY c.collection_start_time DESC, c.record_id DESC
+        LIMIT 10
+    </select>
+
+    <select id="selectEcgDetail" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.WorkbenchEcgDetailVo">
+        SELECT
+            c.record_id AS ecgId,
+            c.ecg_no AS ecgNo,
+            c.patient_id AS patientId,
+            c.patient_name AS patientName,
+            COALESCE(c.gender,
+                     CASE p.gender
+                         WHEN 1 THEN '男'
+                         WHEN 2 THEN '女'
+                         ELSE '未知'
+                     END) AS gender,
+            COALESCE(c.age, p.age) AS age,
+            COALESCE(c.inpatient_no, p.inpatient_no) AS inpatientNo,
+            p.ward_id AS wardId,
+            COALESCE(w.ward_name, c.dept_name) AS wardName,
+            p.bed_id AS bedId,
+            COALESCE(c.bed_no, b.bed_no) AS bedNo,
+            p.primary_diagnosis AS primaryDiagnosis,
+            c.device_id AS deviceId,
+            c.device_name AS deviceName,
+            c.lead_count AS leadCount,
+            c.sampling_rate AS samplingRate,
+            c.collection_duration AS collectionDuration,
+            CASE c.collection_type
+                WHEN 1 THEN '院内常规采集'
+                WHEN 2 THEN '居家远程采集'
+                WHEN 3 THEN '床旁监护'
+                WHEN 4 THEN '手动上传'
+                ELSE '未知'
+            END AS collectionType,
+            c.collection_start_time AS collectStartTime,
+            c.collection_end_time AS collectEndTime,
+            c.ai_analysis_status AS aiAnalysisStatus,
+            c.report_status AS reportStatus,
+            c.display_status AS displayStatus,
+            CASE c.display_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '已分析'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '采集失败'
+                ELSE '未知'
+            END AS status,
+            a.ai_conclusion AS aiConclusion,
+            c.ai_conclusion_short AS aiConclusionShort,
+            a.abnormal_type AS abnormalType,
+            a.confidence AS aiConfidence,
+            c.ecg_data_file_url AS rawDataFileUrl,
+            c.upload_source_file_url AS uploadSourceFileUrl
+        FROM ecg_collection_record c
+                 LEFT JOIN patient_info p ON c.patient_id = p.patient_id AND p.is_deleted = 0
+                 LEFT JOIN sys_ward w ON p.ward_id = w.ward_id AND w.is_deleted = 0
+                 LEFT JOIN sys_bed b ON p.bed_id = b.bed_id AND b.is_deleted = 0
+                 LEFT JOIN ecg_ai_diagnosis a ON a.ai_diagnosis_id = (
+                    SELECT ai.ai_diagnosis_id
+                    FROM ecg_ai_diagnosis ai
+                    WHERE ai.record_id = c.record_id
+                      AND ai.is_deleted = 0
+                    ORDER BY ai.diagnosis_time DESC, ai.ai_diagnosis_id DESC
+                    LIMIT 1
+                 )
+        WHERE c.record_id = #{ecgId}
+          AND c.is_deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>

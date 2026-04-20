@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.workbench.EcgDataMapper">
+
+    <select id="selectEcgDataPage" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.EcgDataPageItemVo">
+        SELECT
+            c.record_id AS ecgId,
+            c.ecg_no AS ecgNo,
+            c.collection_start_time AS collectTime,
+            CONCAT(
+                COALESCE(c.patient_name, ''),
+                ' / ',
+                COALESCE(c.gender, '未知'),
+                ' / ',
+                COALESCE(c.age, 0),
+                '岁'
+            ) AS patientInfo,
+            c.patient_name AS patientName,
+            c.inpatient_no AS inpatientNo,
+            COALESCE(c.dept_name, '未知病区') AS ward,
+            COALESCE(NULLIF(d.device_code, ''), NULLIF(c.device_name, ''), '-') AS deviceNo,
+            CASE c.display_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '已分析'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '采集失败'
+                ELSE '未知'
+            END AS status,
+            COALESCE(NULLIF(c.ai_conclusion_short, ''), NULLIF(a.ai_conclusion, ''), '-') AS aiConclusion
+        FROM ecg_collection_record c
+                 LEFT JOIN ecg_ai_diagnosis a ON a.record_id = c.record_id AND a.is_deleted = 0
+                 LEFT JOIN ecg_device d ON d.device_id = c.device_id AND d.is_deleted = 0
+        WHERE c.is_deleted = 0
+        <if test="req != null and req.keyword != null and req.keyword != ''">
+            AND (
+                c.patient_name LIKE CONCAT('%', #{req.keyword}, '%')
+                OR c.inpatient_no LIKE CONCAT('%', #{req.keyword}, '%')
+                OR c.device_name LIKE CONCAT('%', #{req.keyword}, '%')
+                OR d.device_code LIKE CONCAT('%', #{req.keyword}, '%')
+                OR c.ecg_no LIKE CONCAT('%', #{req.keyword}, '%')
+            )
+        </if>
+        <if test="req != null and req.wardId != null">
+            AND c.dept_id = #{req.wardId}
+        </if>
+        <if test="statusCode != null">
+            AND c.display_status = #{statusCode}
+        </if>
+        <if test="startTime != null">
+            AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND c.collection_start_time <![CDATA[<]]> #{endTime}
+        </if>
+        ORDER BY c.collection_start_time DESC, c.record_id DESC
+    </select>
+
+    <select id="selectPatientSnapshot" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.EcgDataPatientSnapshotVo">
+        SELECT
+            p.patient_id AS patientId,
+            p.patient_name AS patientName,
+            CASE p.gender
+                WHEN 1 THEN '男'
+                WHEN 2 THEN '女'
+                ELSE '未知'
+            END AS gender,
+            p.age AS age,
+            p.inpatient_no AS inpatientNo,
+            p.ward_id AS wardId,
+            w.ward_name AS wardName,
+            b.bed_no AS bedNo,
+            p.primary_diagnosis AS primaryDiagnosis
+        FROM patient_info p
+                 LEFT JOIN sys_ward w ON p.ward_id = w.ward_id AND w.is_deleted = 0
+                 LEFT JOIN sys_bed b ON p.bed_id = b.bed_id AND b.is_deleted = 0
+        WHERE p.patient_id = #{patientId}
+          AND p.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectDeviceSnapshot" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.EcgDataDeviceSnapshotVo">
+        SELECT
+            d.device_id AS deviceId,
+            d.device_code AS deviceCode,
+            d.device_name AS deviceName,
+            d.device_type AS deviceType
+        FROM ecg_device d
+        WHERE d.device_id = #{deviceId}
+          AND d.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <insert id="insertCollectionRecord" parameterType="com.hnkjzy.ecg_collection.model.entity.workbench.EcgCollectionRecordEntity">
+        INSERT INTO ecg_collection_record (
+            record_id,
+            ecg_no,
+            patient_id,
+            patient_name,
+            gender,
+            age,
+            inpatient_no,
+            dept_id,
+            dept_name,
+            bed_no,
+            device_id,
+            device_name,
+            lead_count,
+            collection_start_time,
+            collection_end_time,
+            sampling_rate,
+            ecg_data_file_url,
+            collection_duration,
+            collection_type,
+            upload_user_id,
+            upload_user_name,
+            upload_time,
+            upload_source_file_url,
+            record_status,
+            ai_analysis_status,
+            report_status,
+            display_status,
+            ai_conclusion_short,
+            is_deleted
+        ) VALUES (
+            #{recordId},
+            #{ecgNo},
+            #{patientId},
+            #{patientName},
+            #{gender},
+            #{age},
+            #{inpatientNo},
+            #{deptId},
+            #{deptName},
+            #{bedNo},
+            #{deviceId},
+            #{deviceName},
+            #{leadCount},
+            #{collectionStartTime},
+            #{collectionEndTime},
+            #{samplingRate},
+            #{ecgDataFileUrl},
+            #{collectionDuration},
+            #{collectionType},
+            #{uploadUserId},
+            #{uploadUserName},
+            #{uploadTime},
+            #{uploadSourceFileUrl},
+            #{recordStatus},
+            #{aiAnalysisStatus},
+            #{reportStatus},
+            #{displayStatus},
+            #{aiConclusionShort},
+            #{isDeleted}
+        )
+    </insert>
+
+    <select id="countEcgById" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ecg_collection_record c
+        WHERE c.record_id = #{ecgId}
+          AND c.is_deleted = 0
+    </select>
+
+    <update id="updateEcgStatus">
+        UPDATE ecg_collection_record
+        SET ai_analysis_status = #{aiStatus},
+            report_status = #{reportStatus},
+            display_status = #{displayStatus},
+            update_time = NOW()
+        WHERE record_id = #{ecgId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="selectWardOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+        SELECT
+            CAST(w.ward_id AS CHAR) AS value,
+            w.ward_name AS label
+        FROM sys_ward w
+        WHERE w.is_deleted = 0
+          AND w.status = 1
+        ORDER BY w.sort_num ASC, w.ward_id ASC
+    </select>
+
+    <select id="selectDeviceOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+        SELECT
+            CAST(d.device_id AS CHAR) AS value,
+            CONCAT(d.device_name, ' (', COALESCE(d.device_code, '-'), ')') AS label
+        FROM ecg_device d
+        WHERE d.is_deleted = 0
+        ORDER BY d.update_time DESC, d.device_id DESC
+    </select>
+
+    <select id="selectWaveformMeta" resultType="com.hnkjzy.ecg_collection.model.vo.workbench.EcgDataWaveformVo">
+        SELECT
+            c.record_id AS ecgId,
+            c.ecg_no AS ecgNo,
+            c.sampling_rate AS samplingRate,
+            c.lead_count AS leadCount,
+            c.ecg_data_file_url AS rawDataFileUrl,
+            c.collection_start_time AS collectStartTime,
+            c.collection_end_time AS collectEndTime
+        FROM ecg_collection_record c
+        WHERE c.record_id = #{ecgId}
+          AND c.is_deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>

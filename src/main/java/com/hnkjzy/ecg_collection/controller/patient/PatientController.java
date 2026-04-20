@@ -6,6 +6,7 @@ import com.hnkjzy.ecg_collection.model.dto.patient.PatientPageQueryDto;
 import com.hnkjzy.ecg_collection.model.vo.common.PageResultVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientDashboardStatVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientDetailVo;
+import com.hnkjzy.ecg_collection.model.vo.patient.PatientDictVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientPageItemVo;
 import com.hnkjzy.ecg_collection.service.patient.PatientService;
 import lombok.RequiredArgsConstructor;
@@ -39,5 +40,10 @@ public class PatientController extends BaseController {
     @GetMapping("/detail")
     public ApiResponse<PatientDetailVo> detail(@RequestParam("patientId") Long patientId) {
         return ApiResponse.success(patientService.getPatientDetail(patientId));
+    }
+
+    @GetMapping("/dicts")
+    public ApiResponse<PatientDictVo> dicts() {
+        return ApiResponse.success(patientService.getPatientDicts());
     }
 }

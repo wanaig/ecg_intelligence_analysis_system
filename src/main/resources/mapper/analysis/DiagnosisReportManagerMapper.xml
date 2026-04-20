@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.analysis.DiagnosisReportManagerMapper">
+
+    <select id="selectReportPage" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.DiagnosisReportPageItemVo">
+        SELECT
+            r.report_id AS reportId,
+            r.report_no AS reportNo,
+            CONCAT(
+                COALESCE(r.patient_name, ''),
+                '/',
+                COALESCE(r.age, 0),
+                '岁/',
+                COALESCE(r.gender, '未知')
+            ) AS patientInfo,
+            r.inpatient_no AS hospitalNo,
+            r.collection_time AS collectionTime,
+            COALESCE(NULLIF(r.ai_conclusion, ''), '-') AS aiConclusion,
+            COALESCE(NULLIF(r.doctor_diagnosis, ''), '-') AS doctorConclusion,
+            COALESCE(NULLIF(r.audit_doctor_name, ''), '-') AS auditDoctorName,
+            r.audit_time AS auditTime,
+            CASE
+                WHEN r.report_status IN (2, 3, 4) THEN '已审核'
+                ELSE '待生成'
+            END AS status
+        FROM ecg_diagnosis_report r
+        WHERE r.is_deleted = 0
+        <if test="req != null and req.reportNo != null and req.reportNo != ''">
+            AND r.report_no LIKE CONCAT('%', #{req.reportNo}, '%')
+        </if>
+        <if test="req != null and req.patientName != null and req.patientName != ''">
+            AND r.patient_name LIKE CONCAT('%', #{req.patientName}, '%')
+        </if>
+        <if test="statusCode != null and statusCode == 1">
+            AND r.report_status IN (0, 1)
+        </if>
+        <if test="statusCode != null and statusCode == 2">
+            AND r.report_status IN (2, 3, 4)
+        </if>
+        ORDER BY COALESCE(r.audit_time, r.report_create_time, r.create_time) DESC, r.report_id DESC
+    </select>
+
+    <select id="selectReportDetail" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.DiagnosisReportDetailVo">
+        SELECT
+            r.report_id AS reportId,
+            r.report_no AS reportNo,
+            r.record_id AS recordId,
+            r.ai_diagnosis_id AS aiDiagnosisId,
+
+            r.patient_id AS patientId,
+            r.patient_name AS patientName,
+            r.gender AS gender,
+            r.age AS age,
+            r.inpatient_no AS hospitalNo,
+
+            r.collection_time AS collectionTime,
+
+            r.ai_conclusion AS aiConclusion,
+            r.doctor_diagnosis AS doctorConclusion,
+            r.doctor_suggestion AS doctorSuggestion,
+
+            r.report_create_doctor_id AS reportCreateDoctorId,
+            r.report_create_doctor_name AS reportCreateDoctorName,
+            r.report_create_time AS reportCreateTime,
+
+            r.audit_doctor_id AS auditDoctorId,
+            r.audit_doctor_name AS auditDoctorName,
+            r.audit_time AS auditTime,
+            r.audit_opinion AS auditOpinion,
+
+            r.report_status AS reportStatus,
+            CASE
+                WHEN r.report_status IN (2, 3, 4) THEN '已审核'
+                ELSE '待生成'
+            END AS status
+        FROM ecg_diagnosis_report r
+        WHERE r.report_id = #{reportId}
+          AND r.is_deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>

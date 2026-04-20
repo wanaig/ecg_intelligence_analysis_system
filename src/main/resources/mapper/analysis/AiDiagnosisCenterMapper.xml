@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.analysis.AiDiagnosisCenterMapper">
+
+    <select id="selectOverview" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisOverviewVo">
+        SELECT
+            COUNT(1) AS totalCount,
+            COALESCE(SUM(
+                    CASE
+                        WHEN COALESCE(r.report_status, 1) = 1 THEN 1
+                        ELSE 0
+                        END
+                     ), 0) AS pendingAuditCount,
+            COALESCE(SUM(
+                    CASE
+                        WHEN COALESCE(r.report_status, 1) IN (2, 3, 4) THEN 1
+                        ELSE 0
+                        END
+                     ), 0) AS auditedCount,
+            IFNULL(ROUND(AVG(a.confidence), 2), 0) AS avgConfidence
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+        WHERE a.is_deleted = 0
+          AND a.analysis_status = 2
+    </select>
+
+    <select id="selectDiagnosisPage" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisPageItemVo">
+        SELECT
+            a.diagnosis_no AS diagnosisId,
+            a.record_id AS ecgId,
+            a.ecg_no AS ecgNo,
+            CONCAT(
+                COALESCE(a.patient_name, ''),
+                '/',
+                COALESCE(a.age, 0),
+                '岁/',
+                COALESCE(a.gender, '未知')
+            ) AS patientInfo,
+            a.inpatient_no AS hospitalNo,
+            a.dept_name AS deptName,
+            a.ai_model_version AS aiVersion,
+            COALESCE(NULLIF(a.ai_conclusion, ''), '-') AS aiConclusion,
+            COALESCE(a.abnormal_count, 0) AS abnormalCount,
+            COALESCE(a.confidence, 0) AS confidence,
+            COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) AS diagnosisTime,
+            CASE
+                WHEN COALESCE(r.report_status, 1) = 1 THEN '待审核'
+                WHEN COALESCE(r.report_status, 1) IN (2, 3, 4) THEN '已审核'
+                ELSE '待审核'
+            END AS status
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+        WHERE a.is_deleted = 0
+          AND a.analysis_status = 2
+        <if test="req != null and req.ecgNo != null and req.ecgNo != ''">
+            AND a.ecg_no LIKE CONCAT('%', #{req.ecgNo}, '%')
+        </if>
+        <if test="req != null and req.patientName != null and req.patientName != ''">
+            AND a.patient_name LIKE CONCAT('%', #{req.patientName}, '%')
+        </if>
+        <if test="statusCode != null and statusCode == 1">
+            AND COALESCE(r.report_status, 1) = 1
+        </if>
+        <if test="statusCode != null and statusCode == 2">
+            AND COALESCE(r.report_status, 1) IN (2, 3, 4)
+        </if>
+        ORDER BY COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) DESC, a.ai_diagnosis_id DESC
+    </select>
+
+    <select id="selectDiagnosisDetail" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisDetailVo">
+        SELECT
+            a.diagnosis_no AS diagnosisId,
+            a.ai_diagnosis_id AS aiDiagnosisId,
+            a.record_id AS ecgId,
+            a.ecg_no AS ecgNo,
+
+            a.patient_id AS patientId,
+            a.patient_name AS patientName,
+            a.gender AS gender,
+            a.age AS age,
+            a.inpatient_no AS hospitalNo,
+            a.dept_name AS deptName,
+
+            a.ai_model_version AS aiVersion,
+            COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) AS diagnosisTime,
+            a.analysis_start_time AS analysisStartTime,
+            a.analysis_end_time AS analysisEndTime,
+
+            a.heart_rate AS heartRate,
+            a.pr_interval AS prInterval,
+            a.qrs_duration AS qrsDuration,
+            a.qt_interval AS qtInterval,
+            a.qtc_interval AS qtcInterval,
+
+            a.ai_conclusion AS aiConclusion,
+            a.abnormal_type AS abnormalType,
+            a.abnormal_count AS abnormalCount,
+            a.confidence AS confidence,
+
+            c.lead_count AS leadCount,
+            c.sampling_rate AS samplingRate,
+            c.collection_start_time AS collectionStartTime,
+            c.collection_end_time AS collectionEndTime,
+            c.ecg_data_file_url AS rawDataFileUrl,
+
+            r.report_id AS reportId,
+            r.report_no AS reportNo,
+            r.report_status AS reportStatus,
+            CASE
+                WHEN COALESCE(r.report_status, 1) = 1 THEN '待审核'
+                WHEN COALESCE(r.report_status, 1) IN (2, 3, 4) THEN '已审核'
+                ELSE '待审核'
+            END AS status,
+            r.doctor_diagnosis AS doctorConclusion,
+            r.doctor_suggestion AS doctorSuggestion,
+            r.audit_doctor_id AS auditDoctorId,
+            r.audit_doctor_name AS auditDoctorName,
+            r.audit_time AS auditTime,
+            r.audit_opinion AS auditOpinion
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_collection_record c ON c.record_id = a.record_id AND c.is_deleted = 0
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+        WHERE a.is_deleted = 0
+          AND (
+                a.diagnosis_no = #{diagnosisId}
+                OR CAST(a.ai_diagnosis_id AS CHAR) = #{diagnosisId}
+            )
+        LIMIT 1
+    </select>
+
+    <select id="selectWaveformMeta" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisWaveformVo">
+        SELECT
+            c.record_id AS ecgId,
+            c.ecg_no AS ecgNo,
+            c.sampling_rate AS samplingRate,
+            c.lead_count AS leadCount,
+            c.ecg_data_file_url AS rawDataFileUrl,
+            c.collection_start_time AS collectStartTime,
+            c.collection_end_time AS collectEndTime
+        FROM ecg_collection_record c
+        WHERE c.record_id = #{ecgId}
+          AND c.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectAuditBase" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisAuditBaseVo">
+        SELECT
+            a.ai_diagnosis_id AS aiDiagnosisId,
+            a.diagnosis_no AS diagnosisId,
+            a.record_id AS ecgId,
+            a.ecg_no AS ecgNo,
+            a.patient_id AS patientId,
+            a.patient_name AS patientName,
+            a.gender AS gender,
+            a.age AS age,
+            a.inpatient_no AS hospitalNo,
+            a.ai_conclusion AS aiConclusion,
+            c.collection_start_time AS collectionTime,
+            r.report_id AS reportId,
+            r.report_no AS reportNo,
+            r.report_status AS reportStatus
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_collection_record c ON c.record_id = a.record_id AND c.is_deleted = 0
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+        WHERE a.is_deleted = 0
+          AND (
+                a.diagnosis_no = #{diagnosisId}
+                OR CAST(a.ai_diagnosis_id AS CHAR) = #{diagnosisId}
+            )
+        LIMIT 1
+    </select>
+
+    <insert id="insertAuditReport">
+        INSERT INTO ecg_diagnosis_report (
+            report_id,
+            report_no,
+            record_id,
+            ai_diagnosis_id,
+            patient_id,
+            patient_name,
+            gender,
+            age,
+            inpatient_no,
+            collection_time,
+            ai_conclusion,
+            doctor_diagnosis,
+            doctor_suggestion,
+            report_create_doctor_id,
+            report_create_doctor_name,
+            report_create_time,
+            audit_doctor_id,
+            audit_doctor_name,
+            audit_time,
+            audit_opinion,
+            report_status,
+            is_deleted
+        ) VALUES (
+            #{reportId},
+            #{reportNo},
+            #{ecgId},
+            #{aiDiagnosisId},
+            #{patientId},
+            #{patientName},
+            #{gender},
+            #{age},
+            #{hospitalNo},
+            #{collectionTime},
+            #{aiConclusion},
+            #{doctorConclusion},
+            NULL,
+            #{doctorId},
+            #{doctorName},
+            #{auditTime},
+            #{doctorId},
+            #{doctorName},
+            #{auditTime},
+            #{auditOpinion},
+            #{reportStatus},
+            0
+        )
+    </insert>
+
+    <update id="updateReportAudit">
+        UPDATE ecg_diagnosis_report
+        SET doctor_diagnosis = #{doctorConclusion},
+            audit_doctor_id = #{auditDoctorId},
+            audit_doctor_name = #{auditDoctorName},
+            audit_time = #{auditTime},
+            audit_opinion = #{auditOpinion},
+            report_status = #{reportStatus},
+            update_time = NOW()
+        WHERE report_id = #{reportId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateCollectionReportStatus">
+        UPDATE ecg_collection_record
+        SET report_status = #{reportStatus},
+            display_status = #{displayStatus},
+            update_time = NOW()
+        WHERE record_id = #{ecgId}
+          AND is_deleted = 0
+    </update>
+
+</mapper>
