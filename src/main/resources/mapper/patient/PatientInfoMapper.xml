@@ -231,4 +231,14 @@
           AND r.is_deleted = 0
         ORDER BY r.report_create_time DESC, r.report_id DESC
     </select>
+
+        <select id="selectWardOptions" resultType="com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo">
+                SELECT
+                        CAST(w.ward_id AS CHAR) AS value,
+                        w.ward_name AS label
+                FROM sys_ward w
+                WHERE w.is_deleted = 0
+                    AND w.status = 1
+                ORDER BY w.sort_num ASC, w.ward_id ASC
+        </select>
 </mapper>

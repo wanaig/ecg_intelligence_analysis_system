@@ -6,11 +6,13 @@ import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
 import com.hnkjzy.ecg_collection.mapper.patient.PatientInfoMapper;
 import com.hnkjzy.ecg_collection.model.dto.patient.PatientPageQueryDto;
+import com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo;
 import com.hnkjzy.ecg_collection.model.vo.common.PageResultVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientBasicInfoVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientDashboardStatVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientDiagnosisVo;
+import com.hnkjzy.ecg_collection.model.vo.patient.PatientDictVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientEcgRecordVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.patient.PatientWarningVo;
@@ -22,6 +24,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * 患者查询服务实现。
@@ -101,6 +104,37 @@ public class PatientServiceImpl extends BaseServiceImpl implements PatientServic
         detailVo.setWarningHistory(warningHistory == null ? Collections.emptyList() : warningHistory);
         detailVo.setDiagnosisInfo(diagnosisInfo == null ? Collections.emptyList() : diagnosisInfo);
         return detailVo;
+    }
+
+    @Override
+    public PatientDictVo getPatientDicts() {
+        PatientDictVo dictVo = new PatientDictVo();
+
+        List<DictOptionVo> wardOptions = patientInfoMapper.selectWardOptions();
+        if (wardOptions == null) {
+            wardOptions = new ArrayList<>();
+        } else {
+            wardOptions = new ArrayList<>(wardOptions);
+        }
+        wardOptions.add(0, buildOption("", "全部病区"));
+
+        List<DictOptionVo> riskLevelOptions = new ArrayList<>();
+        riskLevelOptions.add(buildOption("", "全部风险等级"));
+        riskLevelOptions.add(buildOption("1", "低危"));
+        riskLevelOptions.add(buildOption("2", "中危"));
+        riskLevelOptions.add(buildOption("3", "中高危"));
+        riskLevelOptions.add(buildOption("4", "高危"));
+
+        List<DictOptionVo> patientStatusOptions = new ArrayList<>();
+        patientStatusOptions.add(buildOption("", "全部患者状态"));
+        patientStatusOptions.add(buildOption("1", "住院中"));
+        patientStatusOptions.add(buildOption("2", "出院"));
+        patientStatusOptions.add(buildOption("3", "居家随访"));
+
+        dictVo.setWardOptions(wardOptions);
+        dictVo.setRiskLevelOptions(riskLevelOptions);
+        dictVo.setPatientStatusOptions(patientStatusOptions);
+        return dictVo;
     }
 
     private PatientPageQueryDto normalizeQuery(PatientPageQueryDto queryDto) {
@@ -183,5 +217,9 @@ public class PatientServiceImpl extends BaseServiceImpl implements PatientServic
 
     private Long defaultLong(Long value) {
         return value == null ? 0L : value;
+    }
+
+    private DictOptionVo buildOption(String value, String label) {
+        return DictOptionVo.builder().value(value).label(label).build();
     }
 }
