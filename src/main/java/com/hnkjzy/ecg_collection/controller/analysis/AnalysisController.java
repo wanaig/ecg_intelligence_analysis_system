@@ -5,6 +5,7 @@ import com.hnkjzy.ecg_collection.controller.BaseController;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisTimeRangeQueryDto;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningIncludeDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningFullPageQueryDto;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardPageResultVo;
@@ -17,9 +18,11 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelDistributionVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageInitVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningIncludeResultVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTrendVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeWardTopVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDimensionStatVo;
+import jakarta.servlet.http.HttpServletRequest;
 import com.hnkjzy.ecg_collection.service.analysis.AnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -82,6 +85,13 @@ public class AnalysisController extends BaseController {
     public ApiResponse<AnalysisWarningFullPageInitVo> fullWarningPageInit(
             @RequestBody(required = false) AnalysisWarningFullPageQueryDto queryDto) {
         return ApiResponse.success(analysisService.getFullWarningPageInitData(queryDto));
+    }
+
+    @PostMapping("/dashboard/warnings/include")
+    public ApiResponse<AnalysisWarningIncludeResultVo> includeWarning(
+            @RequestBody AnalysisWarningIncludeDto includeDto,
+            HttpServletRequest request) {
+        return ApiResponse.success(analysisService.includeWarning(includeDto, request));
     }
 
     @GetMapping("/core-metrics")

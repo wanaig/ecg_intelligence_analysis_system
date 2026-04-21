@@ -11,6 +11,7 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDeviceUsageStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisLatestEcgPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningIncludeSourceVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportStatusStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo;
@@ -68,6 +69,29 @@ public interface AnalysisMapper extends BaseMapperX<EcgStatisticsResultEntity> {
 
     Long countDashboardPendingHandleWarnings(@Param("startTime") LocalDateTime startTime,
                                              @Param("endTime") LocalDateTime endTime);
+
+    AnalysisWarningIncludeSourceVo selectWarningIncludeSource(@Param("warningId") Long warningId);
+
+    Long selectMonitorIdByPatientId(@Param("patientId") Long patientId);
+
+    int updateMonitorIncludeState(@Param("patientId") Long patientId,
+                                  @Param("warningLevel") Integer warningLevel);
+
+    Long selectMaxMonitorIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
+    int insertMonitorIncludeRecord(@Param("monitorId") Long monitorId,
+                                   @Param("source") AnalysisWarningIncludeSourceVo source,
+                                   @Param("latestUpdateTime") LocalDateTime latestUpdateTime);
+
+    Long selectResearchIdByPatientRecord(@Param("patientId") Long patientId,
+                                         @Param("recordId") Long recordId);
+
+    Long selectMaxResearchIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
+
+    int insertResearchIncludeRecord(@Param("researchId") Long researchId,
+                                    @Param("source") AnalysisWarningIncludeSourceVo source,
+                                    @Param("operatorName") String operatorName,
+                                    @Param("createTime") LocalDateTime createTime);
 
     AnalysisCoreMetricsVo selectCoreMetrics(@Param("startTime") LocalDateTime startTime,
                                             @Param("endTime") LocalDateTime endTime,
