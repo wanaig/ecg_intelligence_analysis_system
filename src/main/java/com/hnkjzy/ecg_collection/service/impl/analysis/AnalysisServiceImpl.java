@@ -5,10 +5,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
 import com.hnkjzy.ecg_collection.mapper.analysis.AnalysisMapper;
+import com.hnkjzy.ecg_collection.mapper.system.SystemUserMapper;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisTimeRangeQueryDto;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningIncludeDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningFullPageQueryDto;
+import com.hnkjzy.ecg_collection.model.entity.system.SysOperationLogEntity;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardPageResultVo;
@@ -27,15 +30,22 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageInitVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningIncludeResultVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningIncludeSourceVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTrendVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeRatioItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeWardTopVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeStatVo;
 import com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo;
+import com.hnkjzy.ecg_collection.model.vo.system.SystemUserOperatorVo;
 import com.hnkjzy.ecg_collection.service.analysis.AnalysisService;
 import com.hnkjzy.ecg_collection.service.impl.BaseServiceImpl;
+import com.hnkjzy.ecg_collection.util.JwtUtil;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -62,6 +72,12 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
     private static final long DEFAULT_PAGE_NUM = 1L;
     private static final long DEFAULT_PAGE_SIZE = 10L;
     private static final long MAX_PAGE_SIZE = 200L;
+    private static final long MONITOR_ID_BASE = 2600L;
+    private static final long RESEARCH_ID_BASE = 3000L;
+    private static final long OP_LOG_ID_BASE = 1400L;
+    private static final long ID_MAX_ALLOWED = 9_999_999_999L;
+    private static final String MODULE_WARNING_INCLUDE = "数据分析预警";
+    private static final String OPERATION_WARNING_INCLUDE = "纳入";
 
     private static final List<DateTimeFormatter> DATE_TIME_FORMATTERS = List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
@@ -70,6 +86,8 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
     );
 
     private final AnalysisMapper analysisMapper;
+    private final SystemUserMapper systemUserMapper;
+    private final JwtUtil jwtUtil;
 
     @Override
     public AnalysisDashboardCoreMetricsVo getDashboardCoreMetrics(AnalysisTimeRangeQueryDto queryDto) {
@@ -322,6 +340,63 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
                 .pages(pageData.getPages())
                 .list(records)
                 .build());
+        return resultVo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public AnalysisWarningIncludeResultVo includeWarning(AnalysisWarningIncludeDto includeDto, HttpServletRequest request) {
+        if (includeDto == null || includeDto.getWarningId() == null || includeDto.getWarningId() <= 0) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "warningId 参数不合法");
+        }
+
+        AnalysisWarningIncludeSourceVo source = analysisMapper.selectWarningIncludeSource(includeDto.getWarningId());
+        if (source == null || source.getPatientId() == null || source.getPatientId() <= 0) {
+            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "预警不存在");
+        }
+
+        if (!StringUtils.hasText(source.getPatientName())) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "预警关联患者信息不完整");
+        }
+
+        SystemUserOperatorVo operator = resolveCurrentOperator(request);
+        String operatorName = resolveOperatorName(operator);
+        LocalDateTime now = LocalDateTime.now();
+
+        Long monitorId = analysisMapper.selectMonitorIdByPatientId(source.getPatientId());
+        if (monitorId == null) {
+            monitorId = nextMonitorId();
+            int inserted = analysisMapper.insertMonitorIncludeRecord(monitorId, source, now);
+            if (inserted <= 0) {
+                throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "重点监护纳入失败");
+            }
+        } else {
+            analysisMapper.updateMonitorIncludeState(source.getPatientId(), defaultWarningLevel(source.getWarningLevel()));
+        }
+
+        Long researchId = null;
+        if (source.getRecordId() != null && source.getRecordId() > 0) {
+            researchId = analysisMapper.selectResearchIdByPatientRecord(source.getPatientId(), source.getRecordId());
+        }
+        if (researchId == null) {
+            researchId = nextResearchId();
+            int inserted = analysisMapper.insertResearchIncludeRecord(researchId, source, operatorName, now);
+            if (inserted <= 0) {
+                throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "科研纳入失败");
+            }
+        }
+
+        insertIncludeOperationLog(source.getWarningId(), source.getPatientId(), operator, operatorName, request, now);
+
+        AnalysisWarningIncludeResultVo resultVo = new AnalysisWarningIncludeResultVo();
+        resultVo.setWarningId(source.getWarningId());
+        resultVo.setPatientId(source.getPatientId());
+        resultVo.setKeyMonitorIncluded(true);
+        resultVo.setResearchIncluded(true);
+        resultVo.setMonitorId(monitorId);
+        resultVo.setResearchId(researchId);
+        resultVo.setIncludedBy(operatorName);
+        resultVo.setIncludedTime(now);
         return resultVo;
     }
 
@@ -683,6 +758,172 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
             return null;
         }
         return value.trim();
+    }
+
+    private Integer defaultWarningLevel(Integer warningLevel) {
+        if (warningLevel == null || warningLevel < 0) {
+            return 0;
+        }
+        if (warningLevel > 3) {
+            return 3;
+        }
+        return warningLevel;
+    }
+
+    private Long nextMonitorId() {
+        Long maxId = analysisMapper.selectMaxMonitorIdInRangeForUpdate(ID_MAX_ALLOWED);
+        long base = maxId == null ? MONITOR_ID_BASE : maxId;
+        if (base >= ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "监护记录ID已达到上限，请联系管理员");
+        }
+        return base + 1;
+    }
+
+    private Long nextResearchId() {
+        Long maxId = analysisMapper.selectMaxResearchIdInRangeForUpdate(ID_MAX_ALLOWED);
+        long base = maxId == null ? RESEARCH_ID_BASE : maxId;
+        if (base >= ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "科研记录ID已达到上限，请联系管理员");
+        }
+        return base + 1;
+    }
+
+    private Long nextOperationLogId() {
+        Long maxId = systemUserMapper.selectMaxOperationLogIdInRangeForUpdate(ID_MAX_ALLOWED);
+        long base = maxId == null ? OP_LOG_ID_BASE : maxId;
+        if (base >= ID_MAX_ALLOWED) {
+            throw new BusinessException(ResultCode.BUSINESS_ERROR.getCode(), "操作日志ID已达到上限，请联系管理员");
+        }
+        return base + 1;
+    }
+
+    private void insertIncludeOperationLog(Long warningId,
+                                           Long patientId,
+                                           SystemUserOperatorVo operator,
+                                           String operatorName,
+                                           HttpServletRequest request,
+                                           LocalDateTime operationTime) {
+        SysOperationLogEntity logEntity = new SysOperationLogEntity();
+        logEntity.setLogId(nextOperationLogId());
+        logEntity.setUserId(operator.getUserId());
+        logEntity.setRealName(operatorName);
+        logEntity.setModule(MODULE_WARNING_INCLUDE);
+        logEntity.setOperationType(OPERATION_WARNING_INCLUDE);
+        logEntity.setOperationContent("预警纳入重点管理 warningId=" + warningId + ", patientId=" + patientId);
+        logEntity.setRequestIp(resolveRequestIp(request));
+        logEntity.setOperationTime(operationTime);
+        logEntity.setIsDeleted(0);
+        systemUserMapper.insertOperationLog(logEntity);
+    }
+
+    private String resolveOperatorName(SystemUserOperatorVo operator) {
+        if (operator == null) {
+            return "系统";
+        }
+        if (StringUtils.hasText(operator.getRealName())) {
+            return operator.getRealName().trim();
+        }
+        if (StringUtils.hasText(operator.getUserName())) {
+            return operator.getUserName().trim();
+        }
+        return "系统";
+    }
+
+    private SystemUserOperatorVo resolveCurrentOperator(HttpServletRequest request) {
+        if (request == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        String authorization = request.getHeader("Authorization");
+        if (!StringUtils.hasText(authorization)) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        Claims claims;
+        try {
+            claims = jwtUtil.parseToken(authorization);
+        } catch (Exception ex) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+
+        Long userId = extractUserId(claims);
+        String subject = claims == null ? null : claims.getSubject();
+
+        SystemUserOperatorVo operator = null;
+        if (userId != null && userId > 0) {
+            operator = systemUserMapper.selectOperatorById(userId);
+        }
+        if (operator == null && StringUtils.hasText(subject)) {
+            String value = subject == null ? "" : subject.trim();
+            if (value.matches("^\\d+$")) {
+                operator = systemUserMapper.selectOperatorById(Long.parseLong(value));
+            } else {
+                operator = systemUserMapper.selectOperatorByUserName(value);
+            }
+        }
+
+        if (operator == null || operator.getStatus() == null || operator.getStatus() != 1) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+        return operator;
+    }
+
+    private Long extractUserId(Claims claims) {
+        if (claims == null) {
+            return null;
+        }
+
+        Object value = claims.get("userId");
+        if (value == null) {
+            value = claims.get("uid");
+        }
+        if (value == null) {
+            value = claims.get("id");
+        }
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof String && ((String) value).trim().matches("^\\d+$")) {
+            return Long.parseLong(((String) value).trim());
+        }
+        return null;
+    }
+
+    private String resolveRequestIp(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String ip = firstNonUnknown(request.getHeader("X-Forwarded-For"));
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        if (!StringUtils.hasText(ip)) {
+            ip = firstNonUnknown(request.getHeader("X-Real-IP"));
+        }
+        if (!StringUtils.hasText(ip)) {
+            ip = firstNonUnknown(request.getHeader("Proxy-Client-IP"));
+        }
+        if (!StringUtils.hasText(ip)) {
+            ip = firstNonUnknown(request.getHeader("WL-Proxy-Client-IP"));
+        }
+        if (!StringUtils.hasText(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return trimToNull(ip);
+    }
+
+    private String firstNonUnknown(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String trimValue = value.trim();
+        if ("unknown".equalsIgnoreCase(trimValue)) {
+            return null;
+        }
+        return trimValue;
     }
 
     private Long defaultLong(Long value) {

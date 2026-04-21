@@ -329,8 +329,8 @@
                 ELSE '未知'
             END AS genderText,
             COALESCE(w.inpatient_no, p.inpatient_no) AS inpatientNo,
-            COALESCE(w.dept_name, p.ward_name) AS wardName,
-            COALESCE(p.bed_no, c.bed_no) AS bedNo,
+            COALESCE(w.dept_name, c.dept_name) AS wardName,
+            c.bed_no AS bedNo,
             p.phone AS phone,
             p.primary_diagnosis AS primaryDiagnosis,
 
@@ -789,5 +789,165 @@
           AND w.status = 1
         ORDER BY w.sort_num ASC, w.ward_id ASC
     </select>
+
+    <select id="selectWarningIncludeSource" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningIncludeSourceVo">
+        SELECT
+            w.warning_id AS warningId,
+            w.patient_id AS patientId,
+            w.record_id AS recordId,
+            w.ai_diagnosis_id AS aiDiagnosisId,
+            w.dept_id AS deptId,
+            COALESCE(NULLIF(w.dept_name, ''), c.dept_name) AS deptName,
+            COALESCE(NULLIF(w.patient_name, ''), p.patient_name) AS patientName,
+            CASE
+                WHEN w.gender = '男' THEN 1
+                WHEN w.gender = '女' THEN 2
+                ELSE p.gender
+            END AS gender,
+            COALESCE(w.age, p.age) AS age,
+            COALESCE(NULLIF(w.inpatient_no, ''), p.inpatient_no) AS inpatientNo,
+            COALESCE(c.bed_no, '--') AS bedNo,
+            c.device_id AS deviceId,
+            c.device_name AS deviceName,
+            w.warning_level AS warningLevel,
+            p.primary_diagnosis AS primaryDiagnosis,
+            w.warning_desc AS warningDesc,
+            a.ai_conclusion AS aiConclusion,
+            COALESCE(c.collection_start_time, w.warning_time) AS collectionTime,
+            w.warning_time AS warningTime
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+                 LEFT JOIN ecg_collection_record c ON w.record_id = c.record_id AND c.is_deleted = 0
+                 LEFT JOIN ecg_ai_diagnosis a ON w.ai_diagnosis_id = a.ai_diagnosis_id AND a.is_deleted = 0
+        WHERE w.warning_id = #{warningId}
+          AND w.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectMonitorIdByPatientId" resultType="java.lang.Long">
+        SELECT m.monitor_id
+        FROM ecg_real_time_monitor m
+        WHERE m.patient_id = #{patientId}
+          AND m.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <update id="updateMonitorIncludeState">
+        UPDATE ecg_real_time_monitor
+        SET is_key_monitor = 1,
+            warning_level = CASE
+                                WHEN warning_level <![CDATA[<]]> #{warningLevel} THEN #{warningLevel}
+                                ELSE warning_level
+                            END,
+            latest_update_time = NOW(),
+            update_time = NOW()
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
+
+    <select id="selectMaxMonitorIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT m.monitor_id
+        FROM ecg_real_time_monitor m
+        WHERE m.monitor_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY m.monitor_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <insert id="insertMonitorIncludeRecord">
+        INSERT INTO ecg_real_time_monitor (
+            monitor_id,
+            patient_id,
+            patient_name,
+            dept_id,
+            dept_name,
+            bed_no,
+            device_id,
+            device_name,
+            monitor_status,
+            is_abnormal,
+            warning_level,
+            is_key_monitor,
+            latest_update_time,
+            is_deleted
+        ) VALUES (
+            #{monitorId},
+            #{source.patientId},
+            #{source.patientName},
+            #{source.deptId},
+            #{source.deptName},
+            #{source.bedNo},
+            #{source.deviceId},
+            #{source.deviceName},
+            2,
+            1,
+            #{source.warningLevel},
+            1,
+            #{latestUpdateTime},
+            0
+        )
+    </insert>
+
+    <select id="selectResearchIdByPatientRecord" resultType="java.lang.Long">
+        SELECT r.research_id
+        FROM ecg_research_data r
+        WHERE r.patient_id = #{patientId}
+          AND r.record_id = #{recordId}
+          AND r.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectMaxResearchIdInRangeForUpdate" resultType="java.lang.Long">
+        SELECT r.research_id
+        FROM ecg_research_data r
+        WHERE r.research_id <![CDATA[<=]]> #{maxAllowedId}
+        ORDER BY r.research_id DESC
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <insert id="insertResearchIncludeRecord">
+        INSERT INTO ecg_research_data (
+            research_id,
+            patient_id,
+            patient_name,
+            gender,
+            age,
+            inpatient_no,
+            record_id,
+            ai_diagnosis_id,
+            dept_id,
+            dept_name,
+            main_emr_diagnosis,
+            ecg_feature_summary,
+            collection_time,
+            is_data_approved,
+            is_exported,
+            search_key,
+            create_user_name,
+            create_time,
+            is_deleted
+        ) VALUES (
+            #{researchId},
+            #{source.patientId},
+            #{source.patientName},
+            #{source.gender},
+            #{source.age},
+            #{source.inpatientNo},
+            #{source.recordId},
+            #{source.aiDiagnosisId},
+            #{source.deptId},
+            #{source.deptName},
+            #{source.primaryDiagnosis},
+            COALESCE(#{source.aiConclusion}, #{source.warningDesc}),
+            #{source.collectionTime},
+            0,
+            0,
+            CONCAT_WS('|', #{source.patientName}, #{source.inpatientNo}, #{source.primaryDiagnosis}, COALESCE(#{source.aiConclusion}, #{source.warningDesc})),
+            #{operatorName},
+            #{createTime},
+            0
+        )
+    </insert>
 
 </mapper>

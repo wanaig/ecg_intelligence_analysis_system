@@ -3,6 +3,7 @@ package com.hnkjzy.ecg_collection.service.analysis;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisTimeRangeQueryDto;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningIncludeDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningFullPageQueryDto;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardPageResultVo;
@@ -15,10 +16,12 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelDistributionVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDetailVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageInitVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningIncludeResultVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTrendVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeWardTopVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDimensionStatVo;
 import com.hnkjzy.ecg_collection.service.BaseService;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 
@@ -42,6 +45,8 @@ public interface AnalysisService extends BaseService {
     AnalysisWarningDetailVo getDashboardWarningDetail(Long alertId);
 
     AnalysisWarningFullPageInitVo getFullWarningPageInitData(AnalysisWarningFullPageQueryDto queryDto);
+
+    AnalysisWarningIncludeResultVo includeWarning(AnalysisWarningIncludeDto includeDto, HttpServletRequest request);
 
     AnalysisCoreMetricsVo getCoreMetrics(AnalysisDashboardQueryDto queryDto);
 
