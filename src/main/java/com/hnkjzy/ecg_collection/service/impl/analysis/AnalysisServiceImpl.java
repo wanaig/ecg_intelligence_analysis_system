@@ -1,17 +1,31 @@
 package com.hnkjzy.ecg_collection.service.impl.analysis;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.common.exception.BusinessException;
 import com.hnkjzy.ecg_collection.common.result.ResultCode;
 import com.hnkjzy.ecg_collection.mapper.analysis.AnalysisMapper;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardQueryDto;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisTimeRangeQueryDto;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardPageResultVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDeviceUsageStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDictVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisLatestEcgPageItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportDeviceStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportStatusStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardWarningTopItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDailyCountVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDimensionStatVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelDistributionVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelStatVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTrendVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeRatioItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeWardTopVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeStatVo;
 import com.hnkjzy.ecg_collection.model.vo.common.DictOptionVo;
 import com.hnkjzy.ecg_collection.service.analysis.AnalysisService;
@@ -21,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,7 +55,198 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisService {
 
+    private static final long DEFAULT_PAGE_NUM = 1L;
+    private static final long DEFAULT_PAGE_SIZE = 10L;
+    private static final long MAX_PAGE_SIZE = 200L;
+
+    private static final List<DateTimeFormatter> DATE_TIME_FORMATTERS = List.of(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    );
+
     private final AnalysisMapper analysisMapper;
+
+    @Override
+    public AnalysisDashboardCoreMetricsVo getDashboardCoreMetrics(AnalysisTimeRangeQueryDto queryDto) {
+        AnalysisTimeRangeQueryDto query = normalizeTimeRangeQuery(queryDto);
+        DateRange dateRange = resolveDateTimeRange(query.getStartTime(), query.getEndTime());
+
+        AnalysisDashboardCoreMetricsVo metricsVo = analysisMapper.selectDashboardCoreMetrics(
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        );
+        if (metricsVo == null) {
+            metricsVo = new AnalysisDashboardCoreMetricsVo();
+        }
+
+        metricsVo.setEcgTotal(defaultLong(metricsVo.getEcgTotal()));
+        metricsVo.setPendingAnalyse(defaultLong(metricsVo.getPendingAnalyse()));
+        metricsVo.setPendingAudit(defaultLong(metricsVo.getPendingAudit()));
+        metricsVo.setAbnormalWarning(defaultLong(metricsVo.getAbnormalWarning()));
+        metricsVo.setWarningTotal(defaultLong(metricsVo.getWarningTotal()));
+        metricsVo.setReportTotal(defaultLong(metricsVo.getReportTotal()));
+        metricsVo.setAiAccuracy(defaultDecimal(metricsVo.getAiAccuracy()));
+        return metricsVo;
+    }
+
+    @Override
+    public AnalysisWarningLevelDistributionVo getWarningLevelDistribution(AnalysisTimeRangeQueryDto queryDto) {
+        AnalysisTimeRangeQueryDto query = normalizeTimeRangeQuery(queryDto);
+        DateRange dateRange = resolveDateTimeRange(query.getStartTime(), query.getEndTime());
+
+        AnalysisWarningLevelDistributionVo vo = analysisMapper.selectWarningLevelDistribution(
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        );
+        if (vo == null) {
+            vo = new AnalysisWarningLevelDistributionVo();
+        }
+
+        vo.setLowRiskCount(defaultLong(vo.getLowRiskCount()));
+        vo.setMiddleRiskCount(defaultLong(vo.getMiddleRiskCount()));
+        vo.setHighRiskCount(defaultLong(vo.getHighRiskCount()));
+        return vo;
+    }
+
+    @Override
+    public AnalysisWarningTypeWardTopVo getWarningTypeWardTop(AnalysisTimeRangeQueryDto queryDto) {
+        AnalysisTimeRangeQueryDto query = normalizeTimeRangeQuery(queryDto);
+        DateRange dateRange = resolveDateTimeRange(query.getStartTime(), query.getEndTime());
+
+        AnalysisWarningTypeWardTopVo resultVo = new AnalysisWarningTypeWardTopVo();
+
+        List<AnalysisWarningTypeRatioItemVo> warningTypeStats = analysisMapper.selectWarningTypeCounts(
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        );
+        if (warningTypeStats == null) {
+            warningTypeStats = new ArrayList<>();
+        }
+
+        long warningTotal = 0L;
+        for (AnalysisWarningTypeRatioItemVo item : warningTypeStats) {
+            Long count = defaultLong(item.getCount());
+            item.setCount(count);
+            warningTotal += count;
+        }
+        for (AnalysisWarningTypeRatioItemVo item : warningTypeStats) {
+            BigDecimal ratio = BigDecimal.ZERO;
+            if (warningTotal > 0) {
+                ratio = BigDecimal.valueOf(item.getCount())
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(BigDecimal.valueOf(warningTotal), 2, RoundingMode.HALF_UP);
+            }
+            item.setRatio(ratio);
+        }
+
+        List<AnalysisWardWarningTopItemVo> wardTopStats = analysisMapper.selectWardWarningTop(
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        );
+        if (wardTopStats == null) {
+            wardTopStats = Collections.emptyList();
+        }
+        for (AnalysisWardWarningTopItemVo item : wardTopStats) {
+            item.setWarningCount(defaultLong(item.getWarningCount()));
+        }
+
+        resultVo.setWarningTypeStats(warningTypeStats);
+        resultVo.setWardTopStats(wardTopStats);
+        return resultVo;
+    }
+
+    @Override
+    public AnalysisWarningTrendVo getWarningTrend7d() {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(6);
+
+        List<AnalysisWarningDailyCountVo> dailyCounts = analysisMapper.selectWarningDailyCounts(
+                startDate.atStartOfDay(),
+                endDate.plusDays(1).atStartOfDay()
+        );
+
+        Map<String, Long> countMap = new HashMap<>();
+        if (dailyCounts != null) {
+            for (AnalysisWarningDailyCountVo item : dailyCounts) {
+                if (item != null && StringUtils.hasText(item.getWarningDate())) {
+                    countMap.put(item.getWarningDate(), defaultLong(item.getWarningCount()));
+                }
+            }
+        }
+
+        List<String> dateList = new ArrayList<>(7);
+        List<Long> warningCountList = new ArrayList<>(7);
+        for (int i = 0; i < 7; i++) {
+            String dateText = startDate.plusDays(i).format(DateTimeFormatter.ISO_LOCAL_DATE);
+            dateList.add(dateText);
+            warningCountList.add(countMap.getOrDefault(dateText, 0L));
+        }
+
+        AnalysisWarningTrendVo trendVo = new AnalysisWarningTrendVo();
+        trendVo.setDateList(dateList);
+        trendVo.setWarningCountList(warningCountList);
+        return trendVo;
+    }
+
+    @Override
+    public AnalysisDashboardPageResultVo<AnalysisPendingWarningPageItemVo> pagePendingWarnings(
+            AnalysisDashboardPageQueryDto queryDto) {
+        AnalysisDashboardPageQueryDto query = normalizeDashboardPageQuery(queryDto);
+        DateRange dateRange = resolveDateTimeRange(query.getStartTime(), query.getEndTime());
+
+        long pageNum = normalizePageNum(query.getPageNum());
+        long pageSize = normalizePageSize(query.getPageSize());
+        Page<AnalysisPendingWarningPageItemVo> page = new Page<>(pageNum, pageSize);
+        IPage<AnalysisPendingWarningPageItemVo> pageData = analysisMapper.selectPendingWarningPage(
+                page,
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        );
+
+        List<AnalysisPendingWarningPageItemVo> records = pageData.getRecords();
+        if (records == null) {
+            records = Collections.emptyList();
+        }
+
+        return AnalysisDashboardPageResultVo.<AnalysisPendingWarningPageItemVo>builder()
+                .total(pageData.getTotal())
+                .pages(pageData.getPages())
+                .list(records)
+                .build();
+    }
+
+    @Override
+    public AnalysisDashboardPageResultVo<AnalysisLatestEcgPageItemVo> pageLatestEcgRecords(
+            AnalysisDashboardPageQueryDto queryDto) {
+        AnalysisDashboardPageQueryDto query = normalizeDashboardPageQuery(queryDto);
+        DateRange dateRange = resolveDateTimeRange(query.getStartTime(), query.getEndTime());
+
+        long pageNum = normalizePageNum(query.getPageNum());
+        long pageSize = normalizePageSize(query.getPageSize());
+        Page<AnalysisLatestEcgPageItemVo> page = new Page<>(pageNum, pageSize);
+        IPage<AnalysisLatestEcgPageItemVo> pageData = analysisMapper.selectLatestEcgPage(
+                page,
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        );
+
+        List<AnalysisLatestEcgPageItemVo> records = pageData.getRecords();
+        if (records == null) {
+            records = Collections.emptyList();
+        }
+        for (AnalysisLatestEcgPageItemVo item : records) {
+            if (!StringUtils.hasText(item.getAiConclusionShort()) && StringUtils.hasText(item.getAiConclusion())) {
+                item.setAiConclusionShort(item.getAiConclusion());
+            }
+        }
+
+        return AnalysisDashboardPageResultVo.<AnalysisLatestEcgPageItemVo>builder()
+                .total(pageData.getTotal())
+                .pages(pageData.getPages())
+                .list(records)
+                .build();
+    }
 
     @Override
     public AnalysisCoreMetricsVo getCoreMetrics(AnalysisDashboardQueryDto queryDto) {
@@ -168,6 +374,56 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
         return dictVo;
     }
 
+    private AnalysisTimeRangeQueryDto normalizeTimeRangeQuery(AnalysisTimeRangeQueryDto queryDto) {
+        AnalysisTimeRangeQueryDto query = queryDto == null ? new AnalysisTimeRangeQueryDto() : queryDto;
+        query.setStartTime(trimToNull(query.getStartTime()));
+        query.setEndTime(trimToNull(query.getEndTime()));
+        return query;
+    }
+
+    private AnalysisDashboardPageQueryDto normalizeDashboardPageQuery(AnalysisDashboardPageQueryDto queryDto) {
+        AnalysisDashboardPageQueryDto query = queryDto == null ? new AnalysisDashboardPageQueryDto() : queryDto;
+        query.setStartTime(trimToNull(query.getStartTime()));
+        query.setEndTime(trimToNull(query.getEndTime()));
+        return query;
+    }
+
+    private long normalizePageNum(Long pageNum) {
+        if (pageNum == null || pageNum < 1) {
+            return DEFAULT_PAGE_NUM;
+        }
+        return pageNum;
+    }
+
+    private long normalizePageSize(Long pageSize) {
+        if (pageSize == null || pageSize < 1) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        if (pageSize > MAX_PAGE_SIZE) {
+            return MAX_PAGE_SIZE;
+        }
+        return pageSize;
+    }
+
+    private DateRange resolveDateTimeRange(String startTimeText, String endTimeText) {
+        LocalDateTime startTime = parseDateTime(startTimeText, false);
+        LocalDateTime endTime = parseDateTime(endTimeText, true);
+
+        if (startTime == null && endTime == null) {
+            return new DateRange(null, null);
+        }
+        if (startTime == null) {
+            startTime = endTime.minusDays(1);
+        }
+        if (endTime == null) {
+            endTime = LocalDateTime.now().plusSeconds(1);
+        }
+        if (startTime.isAfter(endTime)) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "startTime 不能晚于 endTime");
+        }
+        return new DateRange(startTime, endTime);
+    }
+
     private AnalysisDashboardQueryDto normalizeQuery(AnalysisDashboardQueryDto queryDto) {
         AnalysisDashboardQueryDto query = queryDto == null ? new AnalysisDashboardQueryDto() : queryDto;
         query.setTimeType(trimToNull(query.getTimeType()));
@@ -253,6 +509,32 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
         } catch (DateTimeParseException ex) {
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), fieldName + " 参数格式错误");
         }
+    }
+
+    private LocalDateTime parseDateTime(String value, boolean endExclusive) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+
+        String trimValue = value.trim();
+        if (trimValue.length() == 10) {
+            try {
+                LocalDate date = LocalDate.parse(trimValue, DateTimeFormatter.ISO_LOCAL_DATE);
+                return endExclusive ? date.plusDays(1).atStartOfDay() : date.atStartOfDay();
+            } catch (DateTimeParseException ex) {
+                throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "time 参数格式错误");
+            }
+        }
+
+        for (DateTimeFormatter formatter : DATE_TIME_FORMATTERS) {
+            try {
+                LocalDateTime dateTime = LocalDateTime.parse(trimValue, formatter);
+                return endExclusive ? dateTime.plusSeconds(1) : dateTime;
+            } catch (DateTimeParseException ignored) {
+                // try next formatter
+            }
+        }
+        throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "time 参数格式错误");
     }
 
     private AnalysisWarningLevelStatVo buildLevelStat(String level, Long count) {

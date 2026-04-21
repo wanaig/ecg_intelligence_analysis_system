@@ -666,6 +666,42 @@ CREATE TABLE `ecg_statistics_result` (
                                          INDEX `idx_composite_query` (`stat_date`, `stat_type`, `stat_dimension`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='统计结果预计算表：适配「数据分析」页面、工作台统计卡片，预计算多维度统计指标，避免实时多表联查的性能开销；无物理外键约束。';
 
+-- ----------------------------
+-- 17. 科研数据域 - 临床科研数据表
+-- ----------------------------
+CREATE TABLE `ecg_research_data` (
+                                     `research_id` BIGINT NOT NULL COMMENT '科研记录唯一ID（雪花ID）',
+                                     `patient_id` BIGINT NOT NULL COMMENT '关联患者ID（业务关联，无外键约束）',
+                                     `patient_name` VARCHAR(32) DEFAULT NULL COMMENT '患者姓名（原始快照，导出时自动脱敏）',
+                                     `gender` TINYINT DEFAULT NULL COMMENT '性别：1-男 2-女',
+                                     `age` INT DEFAULT NULL COMMENT '患者年龄',
+                                     `inpatient_no` VARCHAR(32) DEFAULT NULL COMMENT '住院号（原始编号，导出脱敏）',
+                                     `record_id` BIGINT DEFAULT NULL COMMENT '关联心电采集记录ID',
+                                     `ai_diagnosis_id` BIGINT DEFAULT NULL COMMENT '关联AI诊断结果ID',
+                                     `dept_id` BIGINT DEFAULT NULL COMMENT '所属科室/病区ID',
+                                     `dept_name` VARCHAR(64) DEFAULT NULL COMMENT '科室/病区名称（冗余快照）',
+                                     `main_emr_diagnosis` VARCHAR(512) DEFAULT NULL COMMENT '病历主要诊断EMR文本',
+                                     `ecg_feature_summary` VARCHAR(512) DEFAULT NULL COMMENT '心电特征总结结果',
+                                     `collection_time` DATETIME DEFAULT NULL COMMENT '本次心电/病历数据采集时间',
+                                     -- 脱敏合规专用字段
+                                     `is_data_approved` TINYINT NOT NULL DEFAULT 0 COMMENT '科研数据授权标记：0-未授权 1-已伦理授权可科研使用',
+                                     `is_exported` TINYINT NOT NULL DEFAULT 0 COMMENT '是否已导出：0-未导出 1-已脱敏导出',
+                                     -- 冗余快速检索字段
+                                     `search_key` VARCHAR(512) DEFAULT NULL COMMENT '检索拼接冗余字段，提升多关键词检索性能',
+                                     `create_user_id` BIGINT DEFAULT NULL COMMENT '数据归档操作人员ID',
+                                     `create_user_name` VARCHAR(32) DEFAULT NULL COMMENT '归档人姓名（冗余快照）',
+                                     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '归档创建时间',
+                                     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '归档更新时间',
+                                     `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除',
+                                     PRIMARY KEY (`research_id`),
+                                     INDEX `idx_patient_id` (`patient_id`),
+                                     INDEX `idx_inpatient_no` (`inpatient_no`),
+                                     INDEX `idx_dept_id` (`dept_id`),
+                                     INDEX `idx_collection_time` (`collection_time`),
+                                     INDEX `idx_is_data_approved` (`is_data_approved`),
+                                     INDEX `idx_composite_search` (`patient_name`, `inpatient_no`, `main_emr_diagnosis`(191))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='临床科研数据表：科研数据管理模块专属核心表，归档合规脱敏后的患者心电与病历数据；支持姓名/病历/心电特征三关键词检索，导出时服务端自动脱敏隐匿真实隐私信息，全程满足医疗科研伦理与隐私合规；无物理外键约束。';
+
 -- 业务逻辑说明：
 -- 1. 预计算规则：
 --    - 日统计：每日凌晨定时任务执行，统计前一日的全量数据。

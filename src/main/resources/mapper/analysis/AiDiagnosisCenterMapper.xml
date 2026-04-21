@@ -4,6 +4,350 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hnkjzy.ecg_collection.mapper.analysis.AiDiagnosisCenterMapper">
 
+    <select id="selectEngineStatus" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisEngineStatusVo">
+        SELECT
+            CASE
+                WHEN COALESCE(SUM(CASE WHEN a.analysis_status = 1 THEN 1 ELSE 0 END), 0) > 0 THEN 'RUNNING'
+                WHEN COALESCE(SUM(CASE WHEN a.analysis_status = 0 THEN 1 ELSE 0 END), 0) > 0 THEN 'PENDING'
+                ELSE 'IDLE'
+                END AS engineStatus,
+            CASE
+                WHEN COALESCE(SUM(CASE WHEN a.analysis_status = 1 THEN 1 ELSE 0 END), 0) > 0 THEN '运行中'
+                WHEN COALESCE(SUM(CASE WHEN a.analysis_status = 0 THEN 1 ELSE 0 END), 0) > 0 THEN '排队中'
+                ELSE '空闲'
+                END AS engineStatusText,
+            COALESCE(MAX(a.ai_model_version), 'v3.2.1') AS engineVersion,
+            CASE
+                WHEN COALESCE(SUM(CASE WHEN a.analysis_status = 1 THEN 1 ELSE 0 END), 0) > 0 THEN 1
+                ELSE 0
+                END AS runningInstanceCount,
+            COALESCE(SUM(CASE WHEN a.analysis_status IN (0, 1) THEN 1 ELSE 0 END), 0) AS queueBacklogCount,
+            COALESCE(SUM(CASE
+                             WHEN a.analysis_status = 2
+                                 AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[>=]]> #{startOfDay}
+                                 AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[<]]> #{nowTime}
+                                 THEN 1
+                             ELSE 0
+                END), 0) AS todayAnalysisCount,
+            COALESCE(ROUND(AVG(CASE
+                                  WHEN a.analysis_status = 2
+                                      AND a.analysis_start_time IS NOT NULL
+                                      AND a.analysis_end_time IS NOT NULL
+                                      AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[>=]]> #{startOfDay}
+                                      AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[<]]> #{nowTime}
+                                      THEN TIMESTAMPDIFF(MICROSECOND, a.analysis_start_time, a.analysis_end_time) / 1000000.0
+                                  ELSE NULL
+                END), 2), 0) AS avgAnalysisSeconds,
+            COALESCE(MAX(COALESCE(a.analysis_end_time, a.update_time, a.create_time)), #{nowTime}) AS lastHeartbeatTime,
+            CASE
+                WHEN COALESCE(SUM(CASE WHEN a.analysis_status = 1 THEN 1 ELSE 0 END), 0) > 0 THEN 'AI引擎任务执行正常'
+                WHEN COALESCE(SUM(CASE WHEN a.analysis_status = 0 THEN 1 ELSE 0 END), 0) > 0 THEN 'AI引擎待处理队列存在积压'
+                ELSE 'AI引擎空闲，暂无待处理任务'
+                END AS statusMessage
+        FROM ecg_ai_diagnosis a
+        WHERE a.is_deleted = 0
+    </select>
+
+    <select id="selectCoreMetricsSnapshot" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisCoreMetricsSnapshotVo">
+        SELECT
+            COUNT(1) AS diagnosisTotal,
+            COALESCE(SUM(CASE WHEN COALESCE(r.report_status, 1) = 1 THEN 1 ELSE 0 END), 0) AS pendingAuditCount,
+            COALESCE(SUM(CASE WHEN COALESCE(r.report_status, 1) = 2 THEN 1 ELSE 0 END), 0) AS auditedPassCount,
+            COALESCE(SUM(CASE WHEN a.is_abnormal = 1 THEN 1 ELSE 0 END), 0) AS abnormalCount,
+            COALESCE(SUM(CASE WHEN a.is_abnormal = 0 THEN 1 ELSE 0 END), 0) AS normalCount
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+        WHERE a.is_deleted = 0
+          AND a.analysis_status = 2
+        <if test="startTime != null">
+            AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[<]]> #{endTime}
+        </if>
+    </select>
+
+    <select id="selectTrendCounts" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisDailyTrendCountVo">
+        SELECT
+            DATE_FORMAT(COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time), '%Y-%m-%d') AS statDate,
+            COALESCE(SUM(CASE WHEN COALESCE(r.report_status, 1) = 1 THEN 1 ELSE 0 END), 0) AS pendingAuditCount,
+            COALESCE(SUM(CASE WHEN COALESCE(r.report_status, 1) = 2 THEN 1 ELSE 0 END), 0) AS passCount,
+            COALESCE(SUM(CASE WHEN COALESCE(r.report_status, 1) = 3 THEN 1 ELSE 0 END), 0) AS rejectCount
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+        WHERE a.is_deleted = 0
+          AND a.analysis_status = 2
+          AND DATE(COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time)) <![CDATA[>=]]> #{startDate}
+          AND DATE(COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time)) <![CDATA[<=]]> #{endDate}
+        GROUP BY DATE_FORMAT(COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time), '%Y-%m-%d')
+        ORDER BY statDate ASC
+    </select>
+
+    <select id="selectAbnormalTypeRatios" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisAbnormalTypeRatioVo">
+        SELECT
+            COALESCE(NULLIF(a.abnormal_type, ''), '其他异常') AS abnormalType,
+            COUNT(1) AS count,
+            0 AS ratio
+        FROM ecg_ai_diagnosis a
+        WHERE a.is_deleted = 0
+          AND a.analysis_status = 2
+          AND a.is_abnormal = 1
+          AND COALESCE(a.abnormal_count, 0) > 0
+        <if test="startTime != null">
+            AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[<]]> #{endTime}
+        </if>
+        GROUP BY COALESCE(NULLIF(a.abnormal_type, ''), '其他异常')
+        ORDER BY count DESC
+        LIMIT 10
+    </select>
+
+    <select id="selectDashboardPage" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisDashboardPageItemVo">
+        SELECT
+            a.diagnosis_no AS diagnosisId,
+            a.ai_diagnosis_id AS aiDiagnosisId,
+            a.record_id AS ecgId,
+            a.ecg_no AS ecgNo,
+            a.patient_name AS patientName,
+            a.gender AS gender,
+            a.age AS age,
+            a.inpatient_no AS inpatientNo,
+            a.dept_id AS deptId,
+            a.dept_name AS deptName,
+            COALESCE(NULLIF(a.ai_conclusion, ''), '-') AS aiConclusion,
+            COALESCE(NULLIF(a.abnormal_type, ''), '-') AS abnormalType,
+            COALESCE(a.abnormal_count, 0) AS abnormalCount,
+            COALESCE(a.confidence, 0) AS confidence,
+            COALESCE(r.report_status, 1) AS reportStatus,
+            CASE
+                WHEN COALESCE(r.report_status, 1) = 1 THEN '待审核'
+                WHEN COALESCE(r.report_status, 1) = 2 THEN '审核通过'
+                WHEN COALESCE(r.report_status, 1) = 3 THEN '已驳回'
+                WHEN COALESCE(r.report_status, 1) = 4 THEN '已作废'
+                ELSE '待审核'
+                END AS reportStatusText,
+            ws.warning_level AS warningLevel,
+            CASE
+                WHEN ws.warning_level = 1 THEN '低危'
+                WHEN ws.warning_level = 2 THEN '中危'
+                WHEN ws.warning_level = 3 THEN '高危'
+                ELSE '正常'
+                END AS warningLevelText,
+            COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) AS diagnosisTime
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+                 LEFT JOIN (
+                    SELECT
+                        COALESCE(ww.ai_diagnosis_id, -1) AS ai_diagnosis_id_key,
+                        ww.record_id,
+                        MAX(ww.warning_level) AS warning_level
+                    FROM ecg_abnormal_warning ww
+                    WHERE ww.is_deleted = 0
+                    GROUP BY COALESCE(ww.ai_diagnosis_id, -1), ww.record_id
+                 ) ws ON ws.record_id = a.record_id
+                     AND ws.ai_diagnosis_id_key = COALESCE(a.ai_diagnosis_id, -1)
+        WHERE a.is_deleted = 0
+          AND a.analysis_status = 2
+        <if test="req != null and req.keyword != null and req.keyword != ''">
+            AND (
+                a.ecg_no LIKE CONCAT('%', #{req.keyword}, '%')
+                    OR a.patient_name LIKE CONCAT('%', #{req.keyword}, '%')
+                    OR a.inpatient_no LIKE CONCAT('%', #{req.keyword}, '%')
+                    OR a.diagnosis_no LIKE CONCAT('%', #{req.keyword}, '%')
+                )
+        </if>
+        <if test="req != null and req.deptId != null">
+            AND a.dept_id = #{req.deptId}
+        </if>
+        <if test="startTime != null">
+            AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[<]]> #{endTime}
+        </if>
+        ORDER BY COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) DESC, a.ai_diagnosis_id DESC
+    </select>
+
+    <select id="selectLiteDetail" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisLiteDetailVo">
+        SELECT
+            a.diagnosis_no AS diagnosisId,
+            a.ai_diagnosis_id AS aiDiagnosisId,
+            a.record_id AS ecgId,
+            a.ecg_no AS ecgNo,
+            a.patient_name AS patientName,
+            a.gender AS gender,
+            a.age AS age,
+            a.inpatient_no AS inpatientNo,
+            a.dept_id AS deptId,
+            a.dept_name AS deptName,
+            c.bed_no AS bedNo,
+            a.ai_model_version AS aiVersion,
+            COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) AS diagnosisTime,
+            COALESCE(a.ai_conclusion, '') AS aiConclusion,
+            COALESCE(NULLIF(a.abnormal_type, ''), '-') AS abnormalType,
+            COALESCE(a.abnormal_count, 0) AS abnormalCount,
+            COALESCE(a.abnormal_level, 0) AS abnormalLevel,
+            COALESCE(a.confidence, 0) AS confidence,
+            COALESCE(r.report_status, 1) AS reportStatus,
+            CASE
+                WHEN COALESCE(r.report_status, 1) = 1 THEN '待审核'
+                WHEN COALESCE(r.report_status, 1) = 2 THEN '审核通过'
+                WHEN COALESCE(r.report_status, 1) = 3 THEN '已驳回'
+                WHEN COALESCE(r.report_status, 1) = 4 THEN '已作废'
+                ELSE '待审核'
+                END AS reportStatusText,
+            ws.warning_level AS warningLevel,
+            CASE
+                WHEN ws.warning_level = 1 THEN '低危'
+                WHEN ws.warning_level = 2 THEN '中危'
+                WHEN ws.warning_level = 3 THEN '高危'
+                ELSE '正常'
+                END AS warningLevelText
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_collection_record c ON c.record_id = a.record_id AND c.is_deleted = 0
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+                 LEFT JOIN (
+                    SELECT
+                        COALESCE(ww.ai_diagnosis_id, -1) AS ai_diagnosis_id_key,
+                        ww.record_id,
+                        MAX(ww.warning_level) AS warning_level
+                    FROM ecg_abnormal_warning ww
+                    WHERE ww.is_deleted = 0
+                    GROUP BY COALESCE(ww.ai_diagnosis_id, -1), ww.record_id
+                 ) ws ON ws.record_id = a.record_id
+                     AND ws.ai_diagnosis_id_key = COALESCE(a.ai_diagnosis_id, -1)
+        WHERE a.is_deleted = 0
+          AND (
+                a.diagnosis_no = #{diagnosisId}
+                OR CAST(a.ai_diagnosis_id AS CHAR) = #{diagnosisId}
+            )
+        LIMIT 1
+    </select>
+
+    <select id="selectAuditDetail" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisAuditDetailVo">
+        SELECT
+            a.diagnosis_no AS diagnosisId,
+            a.ai_diagnosis_id AS aiDiagnosisId,
+            a.record_id AS ecgId,
+            a.ecg_no AS ecgNo,
+            a.patient_name AS patientName,
+            a.gender AS gender,
+            a.age AS age,
+            a.inpatient_no AS inpatientNo,
+            a.dept_id AS deptId,
+            a.dept_name AS deptName,
+            c.bed_no AS bedNo,
+            a.ai_model_version AS aiVersion,
+            COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) AS diagnosisTime,
+            COALESCE(a.ai_conclusion, '') AS aiConclusion,
+            COALESCE(NULLIF(a.abnormal_type, ''), '-') AS abnormalType,
+            COALESCE(a.abnormal_count, 0) AS abnormalCount,
+            COALESCE(a.abnormal_level, 0) AS abnormalLevel,
+            COALESCE(a.confidence, 0) AS confidence,
+            a.heart_rate AS heartRate,
+            a.pr_interval AS prInterval,
+            a.qrs_duration AS qrsDuration,
+            a.qt_interval AS qtInterval,
+            a.qtc_interval AS qtcInterval,
+            r.report_id AS reportId,
+            r.report_no AS reportNo,
+            COALESCE(r.report_status, 1) AS reportStatus,
+            CASE
+                WHEN COALESCE(r.report_status, 1) = 1 THEN '待审核'
+                WHEN COALESCE(r.report_status, 1) = 2 THEN '审核通过'
+                WHEN COALESCE(r.report_status, 1) = 3 THEN '已驳回'
+                WHEN COALESCE(r.report_status, 1) = 4 THEN '已作废'
+                ELSE '待审核'
+                END AS reportStatusText,
+            r.doctor_diagnosis AS doctorConclusion,
+            r.doctor_suggestion AS doctorSuggestion,
+            r.audit_doctor_name AS auditDoctorName,
+            r.audit_time AS auditTime,
+            r.audit_opinion AS auditOpinion
+        FROM ecg_ai_diagnosis a
+                 LEFT JOIN ecg_collection_record c ON c.record_id = a.record_id AND c.is_deleted = 0
+                 LEFT JOIN ecg_diagnosis_report r ON r.report_id = (
+                    SELECT rr.report_id
+                    FROM ecg_diagnosis_report rr
+                    WHERE rr.ai_diagnosis_id = a.ai_diagnosis_id
+                      AND rr.is_deleted = 0
+                    ORDER BY rr.report_create_time DESC, rr.report_id DESC
+                    LIMIT 1
+                 )
+        WHERE a.is_deleted = 0
+          AND (
+                a.diagnosis_no = #{diagnosisId}
+                OR CAST(a.ai_diagnosis_id AS CHAR) = #{diagnosisId}
+            )
+        LIMIT 1
+    </select>
+
+    <select id="selectAuditWarnings" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisAuditWarningVo">
+        SELECT
+            w.warning_id AS warningId,
+            w.warning_type AS warningType,
+            w.warning_level AS warningLevel,
+            CASE
+                WHEN w.warning_level = 1 THEN '低危'
+                WHEN w.warning_level = 2 THEN '中危'
+                WHEN w.warning_level = 3 THEN '高危'
+                ELSE '未知'
+                END AS warningLevelText,
+            w.handle_status AS handleStatus,
+            CASE
+                WHEN w.handle_status = 0 THEN '待确认'
+                WHEN w.handle_status = 1 THEN '待处理'
+                WHEN w.handle_status = 2 THEN '处理中'
+                WHEN w.handle_status = 3 THEN '已处理'
+                WHEN w.handle_status = 4 THEN '已忽略'
+                ELSE '待确认'
+                END AS handleStatusText,
+            w.warning_time AS warningTime,
+            w.warning_desc AS warningDesc,
+            w.handle_opinion AS handleOpinion
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+        <choose>
+            <when test="aiDiagnosisId != null">
+                AND w.ai_diagnosis_id = #{aiDiagnosisId}
+            </when>
+            <otherwise>
+                AND w.record_id = #{recordId}
+            </otherwise>
+        </choose>
+        ORDER BY w.warning_time DESC, w.warning_id DESC
+    </select>
+
     <select id="selectOverview" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AiDiagnosisOverviewVo">
         SELECT
             COUNT(1) AS totalCount,
@@ -259,9 +603,73 @@
         )
     </insert>
 
+    <insert id="insertAuditReportV2">
+        INSERT INTO ecg_diagnosis_report (
+            report_id,
+            report_no,
+            record_id,
+            ai_diagnosis_id,
+            patient_id,
+            patient_name,
+            gender,
+            age,
+            inpatient_no,
+            collection_time,
+            ai_conclusion,
+            doctor_diagnosis,
+            doctor_suggestion,
+            report_create_doctor_id,
+            report_create_doctor_name,
+            report_create_time,
+            audit_doctor_id,
+            audit_doctor_name,
+            audit_time,
+            audit_opinion,
+            report_status,
+            is_deleted
+        ) VALUES (
+            #{reportId},
+            #{reportNo},
+            #{ecgId},
+            #{aiDiagnosisId},
+            #{patientId},
+            #{patientName},
+            #{gender},
+            #{age},
+            #{hospitalNo},
+            #{collectionTime},
+            #{aiConclusion},
+            #{doctorConclusion},
+            #{doctorSuggestion},
+            #{doctorId},
+            #{doctorName},
+            #{reportCreateTime},
+            #{doctorId},
+            #{doctorName},
+            #{auditTime},
+            #{auditOpinion},
+            #{reportStatus},
+            0
+        )
+    </insert>
+
     <update id="updateReportAudit">
         UPDATE ecg_diagnosis_report
         SET doctor_diagnosis = #{doctorConclusion},
+            audit_doctor_id = #{auditDoctorId},
+            audit_doctor_name = #{auditDoctorName},
+            audit_time = #{auditTime},
+            audit_opinion = #{auditOpinion},
+            report_status = #{reportStatus},
+            update_time = NOW()
+        WHERE report_id = #{reportId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateReportAuditV2">
+        UPDATE ecg_diagnosis_report
+        SET doctor_diagnosis = #{doctorConclusion},
+            doctor_suggestion = #{doctorSuggestion},
             audit_doctor_id = #{auditDoctorId},
             audit_doctor_name = #{auditDoctorName},
             audit_time = #{auditTime},
@@ -280,5 +688,41 @@
         WHERE record_id = #{ecgId}
           AND is_deleted = 0
     </update>
+
+    <update id="updateAiDiagnosisAuditSync">
+        UPDATE ecg_ai_diagnosis
+        SET is_abnormal = #{isAbnormal},
+            abnormal_level = #{abnormalLevel},
+            abnormal_type = #{abnormalType},
+            abnormal_count = #{abnormalCount},
+            update_time = NOW()
+        WHERE ai_diagnosis_id = #{aiDiagnosisId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateWarningHandleStatusByDiagnosis">
+        UPDATE ecg_abnormal_warning
+        SET handle_status = #{handleStatus},
+            handle_user_id = #{handleUserId},
+            handle_user_name = #{handleUserName},
+            handle_time = #{handleTime},
+            handle_opinion = #{handleOpinion},
+            update_time = NOW()
+        WHERE is_deleted = 0
+          AND (
+                (#{aiDiagnosisId} IS NOT NULL AND ai_diagnosis_id = #{aiDiagnosisId})
+                OR (#{aiDiagnosisId} IS NULL AND #{recordId} IS NOT NULL AND record_id = #{recordId})
+            )
+    </update>
+
+    <select id="countWarningsByDiagnosis" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ecg_abnormal_warning
+        WHERE is_deleted = 0
+          AND (
+                (#{aiDiagnosisId} IS NOT NULL AND ai_diagnosis_id = #{aiDiagnosisId})
+                OR (#{aiDiagnosisId} IS NULL AND #{recordId} IS NOT NULL AND record_id = #{recordId})
+            )
+    </select>
 
 </mapper>

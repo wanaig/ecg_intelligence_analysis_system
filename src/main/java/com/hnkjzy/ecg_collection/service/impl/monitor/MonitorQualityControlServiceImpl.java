@@ -142,7 +142,12 @@ public class MonitorQualityControlServiceImpl extends BaseServiceImpl implements
         testTypeOptions.add(buildOption("3", "月检"));
         testTypeOptions.add(buildOption("4", "远程检测"));
 
+        List<DictOptionVo> deviceOptions = new ArrayList<>();
+        deviceOptions.add(buildOption("", "全部设备"));
+        deviceOptions.addAll(getNormalDeviceOptions());
+
         dictVo.setDeviceStatusOptions(deviceStatusOptions);
+        dictVo.setDeviceOptions(deviceOptions);
         dictVo.setTestResultOptions(testResultOptions);
         dictVo.setTestStatusOptions(testResultOptions);
         dictVo.setTestTypeOptions(testTypeOptions);

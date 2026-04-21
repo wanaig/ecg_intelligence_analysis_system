@@ -204,6 +204,20 @@
 | 75 | 患者公共筛选字典 | GET | /api/patient/dicts |
 | 76 | 质控设备下拉列表 | GET | /api/monitor/quality-control/device-options |
 | 77 | 测试人员下拉列表 | GET | /api/sys/user/testUserOptions |
+| 78 | 数据分析大盘核心统计指标 | GET | /api/analysis/dashboard/core-metrics |
+| 79 | 预警级别分布数据 | GET | /api/analysis/dashboard/warning-level-distribution |
+| 80 | 预警类型+病区TOP排行数据 | GET | /api/analysis/dashboard/warning-type-ward-top |
+| 81 | 近7日预警趋势折线数据 | GET | /api/analysis/dashboard/warning-trend-7d |
+| 82 | 待处理预警分页列表（数据分析） | POST | /api/analysis/dashboard/pending-warnings/page |
+| 83 | 最新心电记录分页列表（数据分析） | POST | /api/analysis/dashboard/latest-ecg/page |
+| 84 | AI引擎运行状态 | GET | /api/analysis/ai-diagnosis/dashboard/engine-status |
+| 85 | AI核心指标（含同比） | GET | /api/analysis/ai-diagnosis/dashboard/core-metrics |
+| 86 | AI审核趋势（7/15/30） | GET | /api/analysis/ai-diagnosis/dashboard/warning-trend |
+| 87 | AI异常类型占比饼图 | GET | /api/analysis/ai-diagnosis/dashboard/abnormal-type-ratio |
+| 88 | AI诊断记录分页（重构版） | POST | /api/analysis/ai-diagnosis/dashboard/page |
+| 89 | AI诊断轻量详情 | GET | /api/analysis/ai-diagnosis/dashboard/{diagnosisId}/lite |
+| 90 | AI审核完整详情 | GET | /api/analysis/ai-diagnosis/dashboard/{diagnosisId}/audit-detail |
+| 91 | AI审核提交（闭环） | POST | /api/analysis/ai-diagnosis/dashboard/audit/submit |
 
 ---
 
@@ -2330,6 +2344,7 @@ Content-Type: application/json
 |---|---|---|
 | testTypeOptions | array | 测试类型字典 |
 | deviceStatusOptions | array | 设备状态字典 |
+| deviceOptions | array | 设备下拉字典 |
 | testResultOptions | array | 测试结果字典 |
 | testStatusOptions | array | 兼容字段，等同 testResultOptions |
 
@@ -2366,6 +2381,11 @@ Authorization: Bearer <token>
       { "value": "", "label": "全部状态" },
       { "value": "1", "label": "正常" },
       { "value": "2", "label": "异常" }
+    ],
+    "deviceOptions": [
+      { "value": "", "label": "全部设备" },
+      { "value": "1804", "label": "ICU多参数监护仪" },
+      { "value": "1899", "label": "床旁心电监护仪-A01" }
     ],
     "testResultOptions": [
       { "value": "", "label": "全部结果" },
@@ -5806,3 +5826,582 @@ statusList[] 字段：
 | 诊断报告不存在 | 404 | 诊断报告不存在 |
 | 报告 PDF 生成失败 | 5000 | 报告 PDF 生成失败 |
 | 服务内部异常 | 5000 | 系统繁忙，请稍后重试 |
+
+---
+
+## 41. 数据分析驾驶舱（重构版）接口规范
+
+## 41.1 顶部大盘核心统计指标
+
+### 41.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 数据分析大盘核心统计指标 |
+| 请求路径 | /api/analysis/dashboard/core-metrics |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:core:read |
+
+### 41.1.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | startTime | string | 否 | 开始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| Query | endTime | string | 否 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+
+### 41.1.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| ecgTotal | long | 心电采集总量 |
+| pendingAnalyse | long | 待分析数量（ai_analysis_status in 0/1） |
+| pendingAudit | long | 待审核数量（report_status = 1） |
+| abnormalWarning | long | 异常高危预警数（warning_level = 3） |
+| warningTotal | long | 预警总数 |
+| reportTotal | long | 报告总数 |
+| aiAccuracy | number | AI准确率（基于 ecg_ai_diagnosis.confidence 平均值） |
+
+### 41.1.4 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "ecgTotal": 2453,
+    "pendingAnalyse": 194,
+    "pendingAudit": 28,
+    "abnormalWarning": 11,
+    "warningTotal": 564,
+    "reportTotal": 118,
+    "aiAccuracy": 92.8
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 41.2 预警级别分布数据
+
+### 41.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 预警级别分布数据 |
+| 请求路径 | /api/analysis/dashboard/warning-level-distribution |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:warning-level:read |
+
+### 41.2.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | startTime | string | 否 | 开始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| Query | endTime | string | 否 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+
+### 41.2.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| lowRiskCount | long | 低危数量（warning_level = 1） |
+| middleRiskCount | long | 中危数量（warning_level = 2） |
+| highRiskCount | long | 高危数量（warning_level = 3） |
+
+---
+
+## 41.3 预警类型 + 病区 TOP 排行数据
+
+### 41.3.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 预警类型+病区TOP排行 |
+| 请求路径 | /api/analysis/dashboard/warning-type-ward-top |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:warning-top:read |
+
+### 41.3.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | startTime | string | 否 | 开始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| Query | endTime | string | 否 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+
+### 41.3.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| warningTypeStats | array | 预警类型占比列表（饼图） |
+| wardTopStats | array | 病区预警数量TOP列表（横向柱状图） |
+
+warningTypeStats[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| warningType | string | 预警类型名称 |
+| count | long | 数量 |
+| ratio | number | 占比（百分比） |
+
+wardTopStats[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| wardName | string | 病区名称 |
+| warningCount | long | 预警数量 |
+
+---
+
+## 41.4 近 7 日预警趋势折线数据
+
+### 41.4.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 近7日预警趋势 |
+| 请求路径 | /api/analysis/dashboard/warning-trend-7d |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:warning-trend:read |
+
+### 41.4.2 请求入参
+
+无业务入参，默认返回最近 7 个自然日（含当天）趋势。
+
+### 41.4.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| dateList | array | 日期数组（yyyy-MM-dd） |
+| warningCountList | array | 每日预警数量数组，与 dateList 一一对应 |
+
+### 41.4.4 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "dateList": ["2026-04-15", "2026-04-16", "2026-04-17", "2026-04-18", "2026-04-19", "2026-04-20", "2026-04-21"],
+    "warningCountList": [7, 9, 11, 8, 10, 6, 5]
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 41.5 待处理预警分页列表（数据分析）
+
+### 41.5.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 待处理预警分页列表（数据分析） |
+| 请求路径 | /api/analysis/dashboard/pending-warnings/page |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:pending-warning:page |
+
+### 41.5.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| startTime | string | 否 | 空 | 开始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| endTime | string | 否 | 空 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 41.5.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| pages | long | 总页数 |
+| list | array | 当前页数据 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| warningId | long | 预警ID |
+| warningTime | string | 预警时间 |
+| patientInfo | string | 患者信息（姓名/性别/年龄） |
+| ward | string | 病区 |
+| clinicalIndicator | string | 临床指标 |
+| warningLevel | string | 预警级别 |
+| status | string | 状态 |
+
+---
+
+## 41.6 最新心电记录分页列表（数据分析）
+
+### 41.6.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 最新心电记录分页列表（数据分析） |
+| 请求路径 | /api/analysis/dashboard/latest-ecg/page |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:latest-ecg:page |
+
+### 41.6.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| startTime | string | 否 | 空 | 开始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| endTime | string | 否 | 空 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 41.6.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| pages | long | 总页数 |
+| list | array | 最新采集心电全量记录 |
+
+list[] 关键字段（全量快照）：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| recordId | long | 采集记录ID |
+| ecgNo | string | 心电图编号 |
+| patientId | long | 患者ID |
+| patientName | string | 患者姓名 |
+| gender | string | 性别 |
+| age | integer | 年龄 |
+| inpatientNo | string | 住院号 |
+| deptId | long | 病区ID |
+| deptName | string | 病区名称 |
+| bedNo | string | 床号 |
+| deviceId | long | 设备ID |
+| deviceName | string | 设备名称 |
+| leadCount | integer | 导联数 |
+| samplingRate | integer | 采样率 |
+| collectionDuration | integer | 采集时长（秒） |
+| collectionType | integer | 采集类型编码 |
+| collectionTypeText | string | 采集类型文本 |
+| collectStartTime | string | 采集开始时间 |
+| collectEndTime | string | 采集结束时间 |
+| aiAnalysisStatus | integer | AI分析状态 |
+| reportStatus | integer | 报告状态 |
+| displayStatus | integer | 列表展示状态 |
+| statusText | string | 列表展示状态文本 |
+| aiConclusionShort | string | AI简短结论 |
+| aiConclusion | string | AI完整结论 |
+
+---
+
+## 42. AI诊断中心（重构版）接口规范
+
+说明：本章为重构版驾驶舱接口，和 37 章历史接口并行提供，便于前后端平滑切换。
+
+## 42.1 AI引擎运行状态
+
+### 42.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI引擎运行状态 |
+| 请求路径 | /api/analysis/ai-diagnosis/dashboard/engine-status |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:engine-status:read |
+
+### 42.1.2 请求入参
+
+无业务入参。
+
+### 42.1.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| engineStatus | string | 引擎状态编码：RUNNING/PENDING/IDLE |
+| engineStatusText | string | 引擎状态文本 |
+| engineVersion | string | 当前模型版本 |
+| runningInstanceCount | long | 运行实例数 |
+| queueBacklogCount | long | 队列积压任务数 |
+| todayAnalysisCount | long | 今日完成分析数 |
+| avgAnalysisSeconds | number | 今日平均分析耗时（秒） |
+| lastHeartbeatTime | string | 最近心跳时间 |
+| statusMessage | string | 状态说明 |
+
+---
+
+## 42.2 AI核心指标（含同比）
+
+### 42.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI核心指标（含同比） |
+| 请求路径 | /api/analysis/ai-diagnosis/dashboard/core-metrics |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:core-metrics:read |
+
+### 42.2.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | startTime | string | 否 | 开始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| Query | endTime | string | 否 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+
+### 42.2.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| diagnosisTotal | long | AI诊断总量 |
+| diagnosisYoYRate | number | 诊断总量同比（%） |
+| pendingAuditCount | long | 待审核数量 |
+| pendingAuditYoYRate | number | 待审核同比（%） |
+| auditedPassCount | long | 审核通过数量 |
+| auditedPassYoYRate | number | 审核通过同比（%） |
+| abnormalCount | long | 异常判定数量 |
+| abnormalYoYRate | number | 异常数量同比（%） |
+| normalCount | long | 正常判定数量 |
+| normalYoYRate | number | 正常数量同比（%） |
+
+---
+
+## 42.3 AI审核趋势（7/15/30）
+
+### 42.3.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI审核趋势（7/15/30） |
+| 请求路径 | /api/analysis/ai-diagnosis/dashboard/warning-trend |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:trend:read |
+
+### 42.3.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | timeRange | string | 否 | 时间窗，仅支持 7 / 15 / 30，默认 7 |
+
+### 42.3.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| dateList | array | 日期数组（yyyy-MM-dd） |
+| pendingAuditList | array | 每日待审核数量 |
+| passList | array | 每日审核通过数量 |
+| rejectList | array | 每日审核驳回数量 |
+
+---
+
+## 42.4 AI异常类型占比饼图
+
+### 42.4.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI异常类型占比饼图 |
+| 请求路径 | /api/analysis/ai-diagnosis/dashboard/abnormal-type-ratio |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:abnormal-ratio:read |
+
+### 42.4.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Query | startTime | string | 否 | 开始时间 |
+| Query | endTime | string | 否 | 结束时间 |
+
+### 42.4.3 出参说明
+
+返回数组，每项字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| abnormalType | string | 异常类型 |
+| count | long | 数量 |
+| ratio | number | 占比（%） |
+
+---
+
+## 42.5 AI诊断记录分页（重构版）
+
+### 42.5.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI诊断记录分页（重构版） |
+| 请求路径 | /api/analysis/ai-diagnosis/dashboard/page |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:dashboard:page |
+
+### 42.5.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| keyword | string | 否 | 空 | 关键字（姓名/住院号/心电编号/诊断编号） |
+| deptId | long | 否 | 空 | 病区ID |
+| startTime | string | 否 | 空 | 开始时间 |
+| endTime | string | 否 | 空 | 结束时间 |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 42.5.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| pages | long | 总页数 |
+| list | array | 当前页数据 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| diagnosisId | string | 诊断编号 |
+| aiDiagnosisId | long | AI诊断ID |
+| ecgId | long | 采集记录ID |
+| ecgNo | string | 心电图编号 |
+| patientName | string | 患者姓名 |
+| gender | string | 性别 |
+| age | integer | 年龄 |
+| inpatientNo | string | 住院号 |
+| deptId | long | 病区ID |
+| deptName | string | 病区名称 |
+| aiConclusion | string | AI结论 |
+| abnormalType | string | 异常类型 |
+| abnormalCount | integer | 异常数量 |
+| confidence | number | 置信度 |
+| reportStatus | integer | 报告状态 |
+| reportStatusText | string | 报告状态文本 |
+| warningLevel | integer | 最高预警级别 |
+| warningLevelText | string | 最高预警级别文本 |
+| diagnosisTime | string | 诊断时间 |
+
+---
+
+## 42.6 AI诊断轻量详情
+
+### 42.6.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI诊断轻量详情 |
+| 请求路径 | /api/analysis/ai-diagnosis/dashboard/{diagnosisId}/lite |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:lite:read |
+
+### 42.6.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | diagnosisId | string | 是 | 诊断编号（支持 diagnosis_no / ai_diagnosis_id） |
+
+### 42.6.3 出参说明
+
+用于列表侧边栏或弹窗快速查看，包含：患者快照、AI结论、异常信息、报告状态与预警级别。
+
+---
+
+## 42.7 AI审核完整详情
+
+### 42.7.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI审核完整详情 |
+| 请求路径 | /api/analysis/ai-diagnosis/dashboard/{diagnosisId}/audit-detail |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:ai-diagnosis:audit-detail:read |
+
+### 42.7.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | diagnosisId | string | 是 | 诊断编号（支持 diagnosis_no / ai_diagnosis_id） |
+
+### 42.7.3 出参说明
+
+在轻量详情基础上增加：
+
+1. 心电测量参数（heartRate/prInterval/qrsDuration/qtInterval/qtcInterval）。
+2. 报告审核信息（reportNo/reportStatus/doctorConclusion/doctorSuggestion/auditDoctorName/auditTime/auditOpinion）。
+3. 关联预警列表 warningList（级别、处理状态、意见）。
+
+---
+
+## 42.8 AI审核提交（闭环）
+
+### 42.8.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | AI审核提交（闭环） |
+| 请求路径 | /api/analysis/ai-diagnosis/dashboard/audit/submit |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | report:audit / diagnosis:write / analysis:ai-diagnosis:audit |
+
+### 42.8.2 请求入参
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| diagnosisId | string | 是 | 诊断编号 |
+| adoptAiFlag | integer | 否 | 是否采纳AI结论：1-是，0-否，默认 1 |
+| markNormalFlag | integer | 否 | 是否标记正常：1-是，0-否，默认 0 |
+| finalAuditResult | string | 是 | 终审结果：PASS/REJECT（兼容 2/3、通过/驳回） |
+| doctorConclusion | string | 是 | 医生终审结论，最大 2000 |
+| doctorSuggestion | string | 否 | 医生建议，最大 2000 |
+| auditOpinion | string | 否 | 审核意见，最大 256 |
+
+### 42.8.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| diagnosisId | string | 诊断编号 |
+| finalAuditResult | string | 终审结果文本 |
+| reportStatus | integer | 报告状态 |
+| status | string | 状态文本 |
+| auditedBy | string | 审核医生 |
+| auditedTime | string | 审核时间 |
+| reportId | long | 报告ID |
+| reportNo | string | 报告编号 |
+| warningSyncCount | integer | 同步处理的预警条数 |
+| markNormalFlag | integer | 回显标记正常参数 |
+| adoptAiFlag | integer | 回显采纳AI参数 |
+
+### 42.8.4 状态闭环规则
+
+1. 写入/更新诊断报告（ecg_diagnosis_report），同步 report_status。
+2. 同步采集记录状态（ecg_collection_record.report_status、display_status）。
+3. 同步 AI 结果快照（ecg_ai_diagnosis.is_abnormal、abnormal_level、abnormal_type、abnormal_count）。
+4. 同步预警处理状态（ecg_abnormal_warning.handle_status、处理人、处理时间、处理意见）。
+5. 已审核通过（report_status=2）和已作废（report_status=4）记录禁止重复提交。
+
+---
+
+## 42.9 AI重构版错误场景
+
+| 场景 | code | message 示例 |
+|---|---|---|
+| diagnosisId 参数非法 | 400 | diagnosisId 参数不合法 |
+| timeRange 参数非法 | 400 | timeRange 参数不合法 |
+| timeRange 非 7/15/30 | 400 | timeRange 仅支持 7、15、30 |
+| finalAuditResult 参数非法 | 400 | finalAuditResult 参数不合法 |
+| adoptAiFlag/markNormalFlag 参数非法 | 400 | adoptAiFlag 参数不合法 |
+| doctorConclusion 为空 | 400 | doctorConclusion 参数不合法 |
+| doctorConclusion 过长 | 400 | doctorConclusion 长度不能超过 2000 |
+| doctorSuggestion 过长 | 400 | doctorSuggestion 长度不能超过 2000 |
+| auditOpinion 过长 | 400 | auditOpinion 长度不能超过 256 |
+| AI 诊断记录不存在 | 404 | AI 诊断记录不存在 |
+| 当前用户无审核权限 | 403 | 无 AI 诊断审核权限 |
+| 已审核记录重复提交 | 400 | 该诊断记录已审核，不能重复提交 |

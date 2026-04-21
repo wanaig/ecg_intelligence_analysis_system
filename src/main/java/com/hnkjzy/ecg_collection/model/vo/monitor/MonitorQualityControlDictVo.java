@@ -15,6 +15,7 @@ import java.util.List;
 public class MonitorQualityControlDictVo extends BaseVo {
 
     private List<DictOptionVo> deviceStatusOptions;
+    private List<DictOptionVo> deviceOptions;
     private List<DictOptionVo> testResultOptions;
     private List<DictOptionVo> testStatusOptions;
     private List<DictOptionVo> testTypeOptions;
