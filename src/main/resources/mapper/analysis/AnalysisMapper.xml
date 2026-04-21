@@ -288,6 +288,208 @@
         ORDER BY c.collection_start_time DESC, c.record_id DESC
     </select>
 
+    <select id="selectDashboardWarningDetail" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDetailVo">
+        SELECT
+            w.warning_id AS alertId,
+            w.warning_time AS warningTime,
+            w.warning_level AS alertLevel,
+            CASE w.warning_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS alertLevelText,
+            w.handle_status AS alertStatus,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS alertStatusText,
+            w.warning_type AS warningType,
+            w.warning_desc AS warningDesc,
+            CASE w.warning_level
+                WHEN 3 THEN '建议关联检查：肌钙蛋白、CK-MB、电解质、D-二聚体'
+                WHEN 2 THEN '建议关联检查：心肌酶谱、电解质、BNP'
+                ELSE '建议结合常规检验结果进行综合评估'
+            END AS lisHint,
+            w.handle_user_name AS handleUserName,
+            w.handle_time AS handleTime,
+            w.handle_opinion AS handleRemark,
+
+            p.patient_id AS patientId,
+            COALESCE(w.patient_name, p.patient_name) AS patientName,
+            COALESCE(w.age, p.age) AS age,
+            CASE
+                WHEN w.gender IS NOT NULL AND w.gender != '' THEN w.gender
+                WHEN p.gender = 1 THEN '男'
+                WHEN p.gender = 2 THEN '女'
+                ELSE '未知'
+            END AS genderText,
+            COALESCE(w.inpatient_no, p.inpatient_no) AS inpatientNo,
+            COALESCE(w.dept_name, p.ward_name) AS wardName,
+            COALESCE(p.bed_no, c.bed_no) AS bedNo,
+            p.phone AS phone,
+            p.primary_diagnosis AS primaryDiagnosis,
+
+            c.record_id AS recordId,
+            c.ecg_no AS ecgNo,
+            c.device_id AS deviceId,
+            c.device_name AS deviceName,
+            c.lead_count AS leadCount,
+            c.sampling_rate AS samplingRate,
+            c.collection_duration AS collectionDuration,
+            c.collection_start_time AS collectionStartTime,
+            c.collection_end_time AS collectionEndTime,
+            c.ecg_data_file_url AS ecgDataFileUrl,
+            c.upload_source_file_url AS uploadSourceFileUrl,
+
+            a.ai_diagnosis_id AS aiDiagnosisId,
+            a.diagnosis_no AS diagnosisNo,
+            a.ai_model_version AS aiModelVersion,
+            a.ai_conclusion AS aiConclusion,
+            a.heart_rate AS heartRate,
+            a.pr_interval AS prInterval,
+            a.qrs_duration AS qrsDuration,
+            a.qt_interval AS qtInterval,
+            a.qtc_interval AS qtcInterval,
+            a.abnormal_type AS abnormalType,
+            a.abnormal_count AS abnormalCount,
+            a.abnormal_level AS abnormalLevel,
+            CASE a.abnormal_level
+                WHEN 0 THEN '正常'
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS abnormalLevelText,
+            a.confidence AS confidence,
+            a.analysis_status AS analysisStatus,
+            CASE a.analysis_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '分析中'
+                WHEN 2 THEN '已完成'
+                WHEN 3 THEN '失败'
+                ELSE '未知'
+            END AS analysisStatusText,
+            a.diagnosis_time AS diagnosisTime
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+                 LEFT JOIN ecg_collection_record c ON w.record_id = c.record_id AND c.is_deleted = 0
+                 LEFT JOIN ecg_ai_diagnosis a ON (
+                    (w.ai_diagnosis_id IS NOT NULL AND a.ai_diagnosis_id = w.ai_diagnosis_id)
+                    OR (w.ai_diagnosis_id IS NULL AND c.record_id IS NOT NULL AND a.record_id = c.record_id)
+                 ) AND a.is_deleted = 0
+        WHERE w.warning_id = #{alertId}
+          AND w.is_deleted = 0
+        ORDER BY a.diagnosis_time DESC, a.ai_diagnosis_id DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectDashboardFullWarningPage" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageItemVo">
+        SELECT
+            w.warning_id AS warningId,
+            w.warning_time AS warningTime,
+            w.patient_name AS patientName,
+            CASE
+                WHEN w.gender IS NOT NULL AND w.gender != '' THEN w.gender
+                WHEN p.gender = 1 THEN '男'
+                WHEN p.gender = 2 THEN '女'
+                ELSE '未知'
+            END AS genderText,
+            COALESCE(w.age, p.age) AS age,
+            CONCAT(
+                w.patient_name,
+                ' / ',
+                CASE
+                    WHEN w.gender IS NOT NULL AND w.gender != '' THEN w.gender
+                    WHEN p.gender = 1 THEN '男'
+                    WHEN p.gender = 2 THEN '女'
+                    ELSE '未知'
+                END,
+                ' / ',
+                COALESCE(COALESCE(w.age, p.age), 0),
+                '岁'
+            ) AS patientInfo,
+            w.inpatient_no AS inpatientNo,
+            w.dept_name AS wardName,
+            w.warning_type AS warningType,
+            w.warning_level AS alertLevel,
+            CASE w.warning_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '高危'
+                ELSE '未知'
+            END AS alertLevelText,
+            w.handle_status AS alertStatus,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS alertStatusText,
+            w.handle_time AS handleTime
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+        WHERE w.is_deleted = 0
+        <if test="req != null and req.keyword != null and req.keyword != ''">
+            AND (
+                w.patient_name LIKE CONCAT('%', #{req.keyword}, '%')
+                OR w.inpatient_no LIKE CONCAT('%', #{req.keyword}, '%')
+                OR w.warning_type LIKE CONCAT('%', #{req.keyword}, '%')
+            )
+        </if>
+        <if test="req != null and req.ward != null and req.ward != ''">
+            AND (
+                w.dept_name = #{req.ward}
+                OR CAST(w.dept_id AS CHAR) = #{req.ward}
+            )
+        </if>
+        <if test="alertLevelCode != null">
+            AND w.warning_level = #{alertLevelCode}
+        </if>
+        <if test="alertStatusCode != null">
+            AND w.handle_status = #{alertStatusCode}
+        </if>
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<]]> #{endTime}
+        </if>
+        ORDER BY w.warning_time DESC, w.warning_id DESC
+    </select>
+
+    <select id="countDashboardHighRiskWarnings" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+          AND w.warning_level = 3
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<]]> #{endTime}
+        </if>
+    </select>
+
+    <select id="countDashboardPendingHandleWarnings" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+          AND w.handle_status IN (0, 1, 2)
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<]]> #{endTime}
+        </if>
+    </select>
+
     <select id="selectCoreMetrics" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo">
         SELECT
             (

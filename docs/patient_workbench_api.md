@@ -218,6 +218,11 @@
 | 89 | AI诊断轻量详情 | GET | /api/analysis/ai-diagnosis/dashboard/{diagnosisId}/lite |
 | 90 | AI审核完整详情 | GET | /api/analysis/ai-diagnosis/dashboard/{diagnosisId}/audit-detail |
 | 91 | AI审核提交（闭环） | POST | /api/analysis/ai-diagnosis/dashboard/audit/submit |
+| 92 | 科研数据分页列表查询 | GET | /api/analysis/research-data/page |
+| 93 | 选中科研数据脱敏导出 | POST | /api/analysis/research-data/export/selected |
+| 94 | 筛选结果全量脱敏导出 | POST | /api/analysis/research-data/export/all |
+| 95 | 数据分析-预警单条详情 | GET | /api/analysis/dashboard/warnings/{alertId}/detail |
+| 96 | 数据分析-全量预警列表前置加载 | POST | /api/analysis/dashboard/warnings/full-page/init |
 
 ---
 
@@ -5624,7 +5629,366 @@ annotations[] 字段：
 | Token 缺失或失效 | 401 | 未认证或登录已失效 |
 | 当前用户无审核权限 | 403 | 无 AI 诊断审核权限 |
 | 已审核记录重复提交 | 400 | 该诊断记录已审核，不能重复提交 |
+
+---
+
+## 43. 科研数据管理模块接口规范
+
+## 43.1 科研数据分页列表查询
+
+### 43.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 科研数据分页列表查询 |
+| 请求路径 | /api/analysis/research-data/page |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:research-data:read |
+
+### 43.1.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| patientKeyword | string | 否 | 空 | 患者姓名关键词（模糊匹配） |
+| emrKeyword | string | 否 | 空 | EMR主要诊断关键词（模糊匹配） |
+| ecgKeyword | string | 否 | 空 | 心电特征关键词（模糊匹配） |
+| deptId | long | 否 | 空 | 病区ID |
+| startTime | string | 否 | 空 | 开始时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| endTime | string | 否 | 空 | 结束时间，支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss |
+| pageNum | long | 否 | 1 | 页码，最小 1 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 43.1.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| pages | long | 总页数 |
+| list | array | 当前页列表 |
+
+list[] 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| rowNum | long | 序号（跨页连续） |
+| researchId | long | 科研记录ID |
+| patientName | string | 患者姓名 |
+| gender | integer | 性别编码（1男 2女） |
+| genderText | string | 性别文本 |
+| age | integer | 年龄 |
+| inpatientNo | string | 住院号 |
+| deptId | long | 病区ID |
+| deptName | string | 病区名称 |
+| mainEmrDiagnosis | string | 病历主要诊断 |
+| ecgFeatureSummary | string | 心电特征总结 |
+| collectionTime | string | 数据采集时间 |
+| isDataApproved | integer | 伦理授权标记（0未授权 1已授权） |
+| isDataApprovedText | string | 伦理授权文本 |
+| isExported | integer | 导出标记（0未导出 1已导出） |
+| isExportedText | string | 导出状态文本 |
+
+### 43.1.4 请求示例
+
+```http
+GET /api/analysis/research-data/page?patientKeyword=张&emrKeyword=冠心病&ecgKeyword=室早&deptId=1501&startTime=2026-04-18&endTime=2026-04-21&pageNum=1&pageSize=10 HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+```
+
+### 43.1.5 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "total": 2,
+    "pages": 1,
+    "list": [
+      {
+        "rowNum": 1,
+        "researchId": 3001,
+        "patientName": "张建国",
+        "gender": 1,
+        "genderText": "男",
+        "age": 67,
+        "inpatientNo": "ZY202604001",
+        "deptId": 1501,
+        "deptName": "心内一病区",
+        "mainEmrDiagnosis": "冠状动脉粥样硬化性心脏病，高血压3级",
+        "ecgFeatureSummary": "窦性心律，偶发室性早搏，心率88次/分",
+        "collectionTime": "2026-04-18T08:10:00",
+        "isDataApproved": 1,
+        "isDataApprovedText": "已授权",
+        "isExported": 1,
+        "isExportedText": "已导出"
+      }
+    ]
+  },
+  "timestamp": 1776587656203
+}
+```
+
+---
+
+## 43.2 选中科研数据脱敏导出
+
+### 43.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 选中科研数据脱敏导出 |
+| 请求路径 | /api/analysis/research-data/export/selected |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:research-data:export |
+
+### 43.2.2 请求入参
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| researchIdList | array<long> | 是 | 选中的科研记录ID列表 |
+
+请求示例：
+
+```json
+{
+  "researchIdList": [3001, 3003, 3005]
+}
+```
+
+### 43.2.3 响应说明
+
+1. 返回文件流下载，不走统一 JSON 包装。
+2. 响应头 `Content-Type` 为 `text/csv;charset=UTF-8`。
+3. 响应头 `Content-Disposition` 为附件下载，文件名示例：`research-data-selected-20260421103020.csv`。
+
+### 43.2.4 脱敏与审计规则
+
+1. 服务端自动脱敏：姓名脱敏、住院号脱敏。
+2. 仅导出 `is_data_approved=1` 的记录。
+3. 导出成功后批量更新 `ecg_research_data.is_exported=1`。
+4. 写入 `sys_operation_log` 审计日志（模块、操作类型、导出范围、操作人、IP、时间）。
+
+---
+
+## 43.3 筛选结果全量脱敏导出
+
+### 43.3.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 筛选结果全量脱敏导出 |
+| 请求路径 | /api/analysis/research-data/export/all |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:research-data:export |
+
+### 43.3.2 请求入参
+
+与 43.1 分页筛选参数一致：
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| patientKeyword | string | 否 | 患者姓名关键词 |
+| emrKeyword | string | 否 | EMR关键词 |
+| ecgKeyword | string | 否 | 心电特征关键词 |
+| deptId | long | 否 | 病区ID |
+| startTime | string | 否 | 开始时间 |
+| endTime | string | 否 | 结束时间 |
+| pageNum | long | 否 | 与分页筛选保持一致，导出时可忽略 |
+| pageSize | long | 否 | 与分页筛选保持一致，导出时可忽略 |
+
+请求示例：
+
+```json
+{
+  "patientKeyword": "张",
+  "emrKeyword": "冠心病",
+  "ecgKeyword": "室早",
+  "deptId": 1501,
+  "startTime": "2026-04-18",
+  "endTime": "2026-04-21",
+  "pageNum": 1,
+  "pageSize": 10
+}
+```
+
+### 43.3.3 响应说明
+
+1. 返回筛选命中数据的全量脱敏 CSV 文件流。
+2. 脱敏、授权校验、`is_exported` 更新、操作审计规则与 43.2 一致。
+
+---
+
+## 43.4 科研导出错误场景
+
+| 场景 | code | message 示例 |
+|---|---|---|
+| researchIdList 为空或包含非法ID | 400 | researchIdList 参数不合法 |
+| startTime/endTime 格式不合法 | 400 | startTime 参数格式不合法 |
+| 开始时间晚于结束时间 | 400 | startTime 不能晚于 endTime |
+| 未认证或 token 无效 | 401 | 未认证或登录已失效 |
+| 无可导出的已授权科研数据 | 404 | 未查询到可导出的科研数据 |
 | 服务内部异常 | 5000 | 系统繁忙，请稍后重试 |
+
+---
+
+## 44. 数据分析-预警查看与跳转接口规范
+
+## 44.1 预警单条详情接口（数据分析）
+
+### 44.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 预警单条详情接口（数据分析） |
+| 业务作用 | 列表“查看详情”按钮跳转，加载完整预警、患者、心电原始数据、AI诊断全量信息 |
+| 请求路径 | /api/analysis/dashboard/warnings/{alertId}/detail |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:warning:detail |
+
+### 44.1.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | alertId | long | 是 | 预警ID |
+
+### 44.1.3 出参说明
+
+说明：返回一个详情对象，按“预警信息、患者信息、心电原始数据、AI诊断信息”聚合。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| alertId | long | 预警ID |
+| warningTime | string | 预警时间 |
+| alertLevel | integer | 预警等级编码 |
+| alertLevelText | string | 预警等级文本 |
+| alertStatus | integer | 处理状态编码 |
+| alertStatusText | string | 处理状态文本 |
+| warningType | string | 预警类型 |
+| warningDesc | string | 预警描述 |
+| lisHint | string | LIS辅助提示 |
+| handleUserName | string | 处理人 |
+| handleTime | string | 处理时间 |
+| handleRemark | string | 处理意见 |
+| patientId | long | 患者ID |
+| patientName | string | 患者姓名 |
+| age | integer | 年龄 |
+| genderText | string | 性别 |
+| inpatientNo | string | 住院号 |
+| wardName | string | 病区 |
+| bedNo | string | 床号 |
+| phone | string | 联系电话 |
+| primaryDiagnosis | string | 主要诊断 |
+| recordId | long | 心电采集记录ID |
+| ecgNo | string | 心电图编号 |
+| deviceId | long | 设备ID |
+| deviceName | string | 设备名称 |
+| leadCount | integer | 导联数 |
+| samplingRate | integer | 采样率 |
+| collectionDuration | integer | 采集时长（秒） |
+| collectionStartTime | string | 采集开始时间 |
+| collectionEndTime | string | 采集结束时间 |
+| ecgDataFileUrl | string | 心电原始数据文件地址 |
+| uploadSourceFileUrl | string | 源文件地址 |
+| aiDiagnosisId | long | AI诊断ID |
+| diagnosisNo | string | AI诊断编号 |
+| aiModelVersion | string | 模型版本 |
+| aiConclusion | string | AI完整结论 |
+| heartRate | integer | 心率 |
+| prInterval | integer | PR间期 |
+| qrsDuration | integer | QRS时限 |
+| qtInterval | integer | QT间期 |
+| qtcInterval | integer | QTc间期 |
+| abnormalType | string | 异常类型 |
+| abnormalCount | integer | 异常数量 |
+| abnormalLevel | integer | 异常级别编码 |
+| abnormalLevelText | string | 异常级别文本 |
+| confidence | number | 置信度 |
+| analysisStatus | integer | AI分析状态编码 |
+| analysisStatusText | string | AI分析状态文本 |
+| diagnosisTime | string | 诊断完成时间 |
+
+---
+
+## 44.2 跳转全量预警列表前置接口
+
+### 44.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 跳转全量预警列表前置接口 |
+| 业务作用 | “查看全部”跳转入口，加载完整预警监控页面初始化数据（顶部统计 + 筛选字典 + 首屏分页） |
+| 请求路径 | /api/analysis/dashboard/warnings/full-page/init |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:warning:full-page |
+
+### 44.2.2 请求入参
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|---|---|---|---|---|
+| keyword | string | 否 | 空 | 患者姓名/住院号/预警类型关键词 |
+| ward | string | 否 | 空 | 病区名或病区ID |
+| alertLevel | string | 否 | 空 | 预警级别（1/2/3 或 低危/中危/高危） |
+| alertStatus | string | 否 | 空 | 处理状态（0-4 或 待确认/待处理/处理中/已处理/已忽略） |
+| startTime | string | 否 | 空 | 开始时间 |
+| endTime | string | 否 | 空 | 结束时间 |
+| pageNum | long | 否 | 1 | 页码 |
+| pageSize | long | 否 | 10 | 每页条数，最大 200 |
+
+### 44.2.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| highRiskCount | long | 高危预警数（warning_level=3） |
+| pendingHandleCount | long | 待处理预警数（handle_status in 0/1/2） |
+| wardOptions | array | 病区筛选字典 |
+| alertLevelOptions | array | 预警级别字典 |
+| alertStatusOptions | array | 预警状态字典 |
+| pageData | object | 首屏分页数据 |
+
+`pageData` 结构：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| total | long | 总记录数 |
+| pages | long | 总页数 |
+| list | array | 当前页记录 |
+
+`pageData.list[]` 字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| warningId | long | 预警ID |
+| warningTime | string | 预警时间 |
+| patientName | string | 患者姓名 |
+| genderText | string | 性别 |
+| age | integer | 年龄 |
+| patientInfo | string | 患者信息合成字段 |
+| inpatientNo | string | 住院号 |
+| wardName | string | 病区 |
+| warningType | string | 预警类型 |
+| alertLevel | integer | 预警等级编码 |
+| alertLevelText | string | 预警等级文本 |
+| alertStatus | integer | 处理状态编码 |
+| alertStatusText | string | 处理状态文本 |
+| handleTime | string | 处理时间 |
+
+---
+
+## 44.3 错误场景
+
+| 场景 | code | message 示例 |
+|---|---|---|
+| alertId 非法 | 400 | alertId 参数不合法 |
+| alertLevel 非法 | 400 | alertLevel 参数不合法 |
+| alertStatus 非法 | 400 | alertStatus 参数不合法 |
+| 时间格式错误 | 400 | time 参数格式错误 |
+| 预警不存在 | 404 | 预警不存在 |
 
 ---
 

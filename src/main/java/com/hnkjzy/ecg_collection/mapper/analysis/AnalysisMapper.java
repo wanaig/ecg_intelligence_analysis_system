@@ -3,11 +3,14 @@ package com.hnkjzy.ecg_collection.mapper.analysis;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hnkjzy.ecg_collection.mapper.BaseMapperX;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningFullPageQueryDto;
 import com.hnkjzy.ecg_collection.model.entity.analysis.EcgStatisticsResultEntity;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDeviceUsageStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisLatestEcgPageItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDetailVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportStatusStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo;
@@ -50,6 +53,21 @@ public interface AnalysisMapper extends BaseMapperX<EcgStatisticsResultEntity> {
     IPage<AnalysisLatestEcgPageItemVo> selectLatestEcgPage(Page<AnalysisLatestEcgPageItemVo> page,
                                                            @Param("startTime") LocalDateTime startTime,
                                                            @Param("endTime") LocalDateTime endTime);
+
+    AnalysisWarningDetailVo selectDashboardWarningDetail(@Param("alertId") Long alertId);
+
+    IPage<AnalysisWarningFullPageItemVo> selectDashboardFullWarningPage(Page<AnalysisWarningFullPageItemVo> page,
+                                                                        @Param("req") AnalysisWarningFullPageQueryDto req,
+                                                                        @Param("alertLevelCode") Integer alertLevelCode,
+                                                                        @Param("alertStatusCode") Integer alertStatusCode,
+                                                                        @Param("startTime") LocalDateTime startTime,
+                                                                        @Param("endTime") LocalDateTime endTime);
+
+    Long countDashboardHighRiskWarnings(@Param("startTime") LocalDateTime startTime,
+                                        @Param("endTime") LocalDateTime endTime);
+
+    Long countDashboardPendingHandleWarnings(@Param("startTime") LocalDateTime startTime,
+                                             @Param("endTime") LocalDateTime endTime);
 
     AnalysisCoreMetricsVo selectCoreMetrics(@Param("startTime") LocalDateTime startTime,
                                             @Param("endTime") LocalDateTime endTime,

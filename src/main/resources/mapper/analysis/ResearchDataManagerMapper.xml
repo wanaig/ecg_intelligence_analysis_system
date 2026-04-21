@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hnkjzy.ecg_collection.mapper.analysis.ResearchDataManagerMapper">
+
+    <select id="selectResearchPage" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.ResearchDataPageItemVo">
+        SELECT
+            r.research_id AS researchId,
+            r.patient_name AS patientName,
+            r.gender AS gender,
+            CASE
+                WHEN r.gender = 1 THEN '男'
+                WHEN r.gender = 2 THEN '女'
+                ELSE '未知'
+            END AS genderText,
+            r.age AS age,
+            r.inpatient_no AS inpatientNo,
+            r.dept_id AS deptId,
+            r.dept_name AS deptName,
+            r.main_emr_diagnosis AS mainEmrDiagnosis,
+            r.ecg_feature_summary AS ecgFeatureSummary,
+            r.collection_time AS collectionTime,
+            r.is_data_approved AS isDataApproved,
+            CASE
+                WHEN r.is_data_approved = 1 THEN '已授权'
+                ELSE '未授权'
+            END AS isDataApprovedText,
+            r.is_exported AS isExported,
+            CASE
+                WHEN r.is_exported = 1 THEN '已导出'
+                ELSE '未导出'
+            END AS isExportedText
+        FROM ecg_research_data r
+        WHERE r.is_deleted = 0
+        <if test="req != null and req.patientKeyword != null and req.patientKeyword != ''">
+            AND r.patient_name LIKE CONCAT('%', #{req.patientKeyword}, '%')
+        </if>
+        <if test="req != null and req.emrKeyword != null and req.emrKeyword != ''">
+            AND r.main_emr_diagnosis LIKE CONCAT('%', #{req.emrKeyword}, '%')
+        </if>
+        <if test="req != null and req.ecgKeyword != null and req.ecgKeyword != ''">
+            AND r.ecg_feature_summary LIKE CONCAT('%', #{req.ecgKeyword}, '%')
+        </if>
+        <if test="req != null and req.deptId != null">
+            AND r.dept_id = #{req.deptId}
+        </if>
+        <if test="startTime != null">
+            AND r.collection_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND r.collection_time <![CDATA[<=]]> #{endTime}
+        </if>
+        ORDER BY r.collection_time DESC, r.research_id DESC
+    </select>
+
+    <select id="selectExportRowsByResearchIds" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.ResearchDataExportRowVo">
+        SELECT
+            r.research_id AS researchId,
+            r.patient_name AS patientName,
+            r.gender AS gender,
+            r.age AS age,
+            r.inpatient_no AS inpatientNo,
+            r.dept_id AS deptId,
+            r.dept_name AS deptName,
+            r.main_emr_diagnosis AS mainEmrDiagnosis,
+            r.ecg_feature_summary AS ecgFeatureSummary,
+            r.collection_time AS collectionTime,
+            r.is_data_approved AS isDataApproved,
+            r.is_exported AS isExported
+        FROM ecg_research_data r
+        WHERE r.is_deleted = 0
+          AND r.is_data_approved = 1
+          AND r.research_id IN
+        <foreach collection="researchIdList" item="researchId" open="(" separator="," close=")">
+            #{researchId}
+        </foreach>
+        ORDER BY r.collection_time DESC, r.research_id DESC
+    </select>
+
+    <select id="selectExportRowsByFilter" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.ResearchDataExportRowVo">
+        SELECT
+            r.research_id AS researchId,
+            r.patient_name AS patientName,
+            r.gender AS gender,
+            r.age AS age,
+            r.inpatient_no AS inpatientNo,
+            r.dept_id AS deptId,
+            r.dept_name AS deptName,
+            r.main_emr_diagnosis AS mainEmrDiagnosis,
+            r.ecg_feature_summary AS ecgFeatureSummary,
+            r.collection_time AS collectionTime,
+            r.is_data_approved AS isDataApproved,
+            r.is_exported AS isExported
+        FROM ecg_research_data r
+        WHERE r.is_deleted = 0
+          AND r.is_data_approved = 1
+        <if test="req != null and req.patientKeyword != null and req.patientKeyword != ''">
+            AND r.patient_name LIKE CONCAT('%', #{req.patientKeyword}, '%')
+        </if>
+        <if test="req != null and req.emrKeyword != null and req.emrKeyword != ''">
+            AND r.main_emr_diagnosis LIKE CONCAT('%', #{req.emrKeyword}, '%')
+        </if>
+        <if test="req != null and req.ecgKeyword != null and req.ecgKeyword != ''">
+            AND r.ecg_feature_summary LIKE CONCAT('%', #{req.ecgKeyword}, '%')
+        </if>
+        <if test="req != null and req.deptId != null">
+            AND r.dept_id = #{req.deptId}
+        </if>
+        <if test="startTime != null">
+            AND r.collection_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND r.collection_time <![CDATA[<=]]> #{endTime}
+        </if>
+        ORDER BY r.collection_time DESC, r.research_id DESC
+    </select>
+
+    <update id="markExportedByResearchIds">
+        UPDATE ecg_research_data
+        SET is_exported = 1,
+            update_time = NOW()
+        WHERE is_deleted = 0
+          AND research_id IN
+        <foreach collection="researchIdList" item="researchId" open="(" separator="," close=")">
+            #{researchId}
+        </foreach>
+    </update>
+</mapper>
