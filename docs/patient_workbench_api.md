@@ -223,6 +223,7 @@
 | 94 | 筛选结果全量脱敏导出 | POST | /api/analysis/research-data/export/all |
 | 95 | 数据分析-预警单条详情 | GET | /api/analysis/dashboard/warnings/{alertId}/detail |
 | 96 | 数据分析-全量预警列表前置加载 | POST | /api/analysis/dashboard/warnings/full-page/init |
+| 97 | 预警纳入科研/重点监护 | POST | /api/analysis/dashboard/warnings/include |
 
 ---
 
@@ -5980,7 +5981,78 @@ Authorization: Bearer <token>
 
 ---
 
-## 44.3 错误场景
+## 44.3 预警纳入科研/重点监护接口
+
+### 44.3.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 预警纳入科研/重点监护 |
+| 业务作用 | 列表“纳入”按钮使用：按预警ID将患者纳入重点管理，并同步纳入科研数据池 |
+| 请求路径 | /api/analysis/dashboard/warnings/include |
+| 请求方式 | POST |
+| Content-Type | application/json |
+| 权限码 | analysis:dashboard:warning:include |
+
+### 44.3.2 请求入参
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| warningId | long | 是 | 预警ID（对应 ecg_abnormal_warning.warning_id） |
+
+请求示例：
+
+```json
+{
+  "warningId": 2400005
+}
+```
+
+### 44.3.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| warningId | long | 预警ID |
+| patientId | long | 患者ID |
+| keyMonitorIncluded | boolean | 是否已纳入重点监护 |
+| researchIncluded | boolean | 是否已纳入科研数据 |
+| monitorId | long | 重点监护记录ID（ecg_real_time_monitor.monitor_id） |
+| researchId | long | 科研归档记录ID（ecg_research_data.research_id） |
+| includedBy | string | 操作人 |
+| includedTime | string | 纳入时间 |
+
+### 44.3.4 业务规则
+
+1. 根据 warningId 查询 ecg_abnormal_warning，要求 is_deleted=0 且记录存在。
+2. 从预警记录提取 patient_id、record_id、ai_diagnosis_id、dept_id、dept_name 等字段作为纳入依据。
+3. 重点监护纳入：将 ecg_real_time_monitor.is_key_monitor 置为 1；若监护记录不存在则按患者快照创建监护记录。
+4. 科研纳入：向 ecg_research_data 归档数据；若存在同 patient_id + record_id 的有效记录则幂等返回，不重复插入。
+5. 该接口为幂等接口：重复点击“纳入”按钮，不应产生重复科研记录与重复监护关系。
+6. 操作需记录审计日志（操作对象 warningId、patientId、操作者、时间、IP）。
+
+### 44.3.5 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "纳入成功",
+  "data": {
+    "warningId": 2400005,
+    "patientId": 2005,
+    "keyMonitorIncluded": true,
+    "researchIncluded": true,
+    "monitorId": 2605,
+    "researchId": 3006,
+    "includedBy": "admin",
+    "includedTime": "2026-04-21T10:30:20"
+  },
+  "timestamp": 1776588220203
+}
+```
+
+---
+
+## 44.4 错误场景
 
 | 场景 | code | message 示例 |
 |---|---|---|
