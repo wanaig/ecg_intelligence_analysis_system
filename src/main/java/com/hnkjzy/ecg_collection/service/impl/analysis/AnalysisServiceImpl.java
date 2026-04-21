@@ -8,6 +8,7 @@ import com.hnkjzy.ecg_collection.mapper.analysis.AnalysisMapper;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisTimeRangeQueryDto;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningFullPageQueryDto;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardPageResultVo;
@@ -23,6 +24,9 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDailyCountVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDimensionStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelDistributionVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelStatVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDetailVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageInitVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTrendVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeRatioItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeWardTopVo;
@@ -249,6 +253,79 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
     }
 
     @Override
+    public AnalysisWarningDetailVo getDashboardWarningDetail(Long alertId) {
+        if (alertId == null || alertId <= 0) {
+            throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "alertId 参数不合法");
+        }
+
+        AnalysisWarningDetailVo detailVo = analysisMapper.selectDashboardWarningDetail(alertId);
+        if (detailVo == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "预警不存在");
+        }
+
+        detailVo.setConfidence(defaultDecimal(detailVo.getConfidence()));
+        detailVo.setAbnormalCount(detailVo.getAbnormalCount() == null ? 0 : detailVo.getAbnormalCount());
+        detailVo.setAbnormalLevel(detailVo.getAbnormalLevel() == null ? 0 : detailVo.getAbnormalLevel());
+        detailVo.setAbnormalLevelText(defaultString(detailVo.getAbnormalLevelText(), abnormalLevelText(detailVo.getAbnormalLevel())));
+        detailVo.setAnalysisStatus(detailVo.getAnalysisStatus() == null ? 0 : detailVo.getAnalysisStatus());
+        detailVo.setAnalysisStatusText(defaultString(detailVo.getAnalysisStatusText(), analysisStatusText(detailVo.getAnalysisStatus())));
+        return detailVo;
+    }
+
+    @Override
+    public AnalysisWarningFullPageInitVo getFullWarningPageInitData(AnalysisWarningFullPageQueryDto queryDto) {
+        AnalysisWarningFullPageQueryDto query = normalizeFullWarningPageQuery(queryDto);
+        Integer alertLevelCode = parseAlertLevel(query.getAlertLevel());
+        Integer alertStatusCode = parseAlertStatus(query.getAlertStatus());
+        DateRange dateRange = resolveDateTimeRange(query.getStartTime(), query.getEndTime());
+
+        long pageNum = normalizePageNum(query.getPageNum());
+        long pageSize = normalizePageSize(query.getPageSize());
+
+        Page<AnalysisWarningFullPageItemVo> page = new Page<>(pageNum, pageSize);
+        IPage<AnalysisWarningFullPageItemVo> pageData = analysisMapper.selectDashboardFullWarningPage(
+                page,
+                query,
+                alertLevelCode,
+                alertStatusCode,
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        );
+
+        List<AnalysisWarningFullPageItemVo> records = pageData.getRecords();
+        if (records == null) {
+            records = Collections.emptyList();
+        }
+
+        AnalysisWarningFullPageInitVo resultVo = new AnalysisWarningFullPageInitVo();
+        resultVo.setHighRiskCount(defaultLong(analysisMapper.countDashboardHighRiskWarnings(
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        )));
+        resultVo.setPendingHandleCount(defaultLong(analysisMapper.countDashboardPendingHandleWarnings(
+                dateRange.getStartTime(),
+                dateRange.getEndTime()
+        )));
+
+        List<DictOptionVo> wardOptions = analysisMapper.selectWardOptions();
+        if (wardOptions == null) {
+            wardOptions = new ArrayList<>();
+        }
+        wardOptions.add(0, DictOptionVo.builder().value("").label("全部病区").build());
+        resultVo.setWardOptions(wardOptions);
+
+        resultVo.setAlertLevelOptions(buildAlertLevelOptions());
+        resultVo.setAlertStatusOptions(buildAlertStatusOptions());
+
+        resultVo.setPageData(AnalysisDashboardPageResultVo.<AnalysisWarningFullPageItemVo>builder()
+                .total(pageData.getTotal())
+                .pages(pageData.getPages())
+                .list(records)
+                .build());
+        return resultVo;
+    }
+
+    @Override
     public AnalysisCoreMetricsVo getCoreMetrics(AnalysisDashboardQueryDto queryDto) {
         AnalysisDashboardQueryDto query = normalizeQuery(queryDto);
         if (query.getWardId() != null && query.getWardId() <= 0) {
@@ -386,6 +463,63 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
         query.setStartTime(trimToNull(query.getStartTime()));
         query.setEndTime(trimToNull(query.getEndTime()));
         return query;
+    }
+
+    private AnalysisWarningFullPageQueryDto normalizeFullWarningPageQuery(AnalysisWarningFullPageQueryDto queryDto) {
+        AnalysisWarningFullPageQueryDto query = queryDto == null ? new AnalysisWarningFullPageQueryDto() : queryDto;
+        query.setKeyword(trimToNull(query.getKeyword()));
+        query.setWard(trimToNull(query.getWard()));
+        query.setAlertLevel(trimToNull(query.getAlertLevel()));
+        query.setAlertStatus(trimToNull(query.getAlertStatus()));
+        query.setStartTime(trimToNull(query.getStartTime()));
+        query.setEndTime(trimToNull(query.getEndTime()));
+        return query;
+    }
+
+    private Integer parseAlertLevel(String alertLevel) {
+        if (!StringUtils.hasText(alertLevel) || "全部级别".equals(alertLevel)) {
+            return null;
+        }
+
+        switch (alertLevel.trim()) {
+            case "1":
+            case "低危":
+                return 1;
+            case "2":
+            case "中危":
+                return 2;
+            case "3":
+            case "高危":
+                return 3;
+            default:
+                throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "alertLevel 参数不合法");
+        }
+    }
+
+    private Integer parseAlertStatus(String alertStatus) {
+        if (!StringUtils.hasText(alertStatus) || "全部状态".equals(alertStatus)) {
+            return null;
+        }
+
+        switch (alertStatus.trim()) {
+            case "0":
+            case "待确认":
+                return 0;
+            case "1":
+            case "待处理":
+                return 1;
+            case "2":
+            case "处理中":
+                return 2;
+            case "3":
+            case "已处理":
+                return 3;
+            case "4":
+            case "已忽略":
+                return 4;
+            default:
+                throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "alertStatus 参数不合法");
+        }
     }
 
     private long normalizePageNum(Long pageNum) {
@@ -553,6 +687,62 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
 
     private Long defaultLong(Long value) {
         return value == null ? 0L : value;
+    }
+
+    private String defaultString(String value, String defaultValue) {
+        return StringUtils.hasText(value) ? value : defaultValue;
+    }
+
+    private List<DictOptionVo> buildAlertLevelOptions() {
+        List<DictOptionVo> options = new ArrayList<>();
+        options.add(DictOptionVo.builder().value("").label("全部级别").build());
+        options.add(DictOptionVo.builder().value("1").label("低危").build());
+        options.add(DictOptionVo.builder().value("2").label("中危").build());
+        options.add(DictOptionVo.builder().value("3").label("高危").build());
+        return options;
+    }
+
+    private List<DictOptionVo> buildAlertStatusOptions() {
+        List<DictOptionVo> options = new ArrayList<>();
+        options.add(DictOptionVo.builder().value("").label("全部状态").build());
+        options.add(DictOptionVo.builder().value("0").label("待确认").build());
+        options.add(DictOptionVo.builder().value("1").label("待处理").build());
+        options.add(DictOptionVo.builder().value("2").label("处理中").build());
+        options.add(DictOptionVo.builder().value("3").label("已处理").build());
+        options.add(DictOptionVo.builder().value("4").label("已忽略").build());
+        return options;
+    }
+
+    private String abnormalLevelText(Integer abnormalLevel) {
+        if (abnormalLevel == null || abnormalLevel <= 0) {
+            return "正常";
+        }
+        if (abnormalLevel == 1) {
+            return "低危";
+        }
+        if (abnormalLevel == 2) {
+            return "中危";
+        }
+        if (abnormalLevel == 3) {
+            return "高危";
+        }
+        return "未知";
+    }
+
+    private String analysisStatusText(Integer analysisStatus) {
+        if (analysisStatus == null || analysisStatus == 0) {
+            return "待分析";
+        }
+        if (analysisStatus == 1) {
+            return "分析中";
+        }
+        if (analysisStatus == 2) {
+            return "已完成";
+        }
+        if (analysisStatus == 3) {
+            return "失败";
+        }
+        return "未知";
     }
 
     private BigDecimal defaultDecimal(BigDecimal value) {

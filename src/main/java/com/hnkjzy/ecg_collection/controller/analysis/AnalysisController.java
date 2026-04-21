@@ -5,6 +5,7 @@ import com.hnkjzy.ecg_collection.controller.BaseController;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisTimeRangeQueryDto;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisWarningFullPageQueryDto;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardPageResultVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo;
@@ -14,12 +15,15 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageIte
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportDeviceStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelDistributionVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDetailVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningFullPageInitVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTrendVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeWardTopVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDimensionStatVo;
 import com.hnkjzy.ecg_collection.service.analysis.AnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,6 +71,17 @@ public class AnalysisController extends BaseController {
     public ApiResponse<AnalysisDashboardPageResultVo<AnalysisLatestEcgPageItemVo>> latestEcgPage(
             @RequestBody(required = false) AnalysisDashboardPageQueryDto queryDto) {
         return ApiResponse.success(analysisService.pageLatestEcgRecords(queryDto));
+    }
+
+    @GetMapping("/dashboard/warnings/{alertId}/detail")
+    public ApiResponse<AnalysisWarningDetailVo> warningDetail(@PathVariable("alertId") Long alertId) {
+        return ApiResponse.success(analysisService.getDashboardWarningDetail(alertId));
+    }
+
+    @PostMapping("/dashboard/warnings/full-page/init")
+    public ApiResponse<AnalysisWarningFullPageInitVo> fullWarningPageInit(
+            @RequestBody(required = false) AnalysisWarningFullPageQueryDto queryDto) {
+        return ApiResponse.success(analysisService.getFullWarningPageInitData(queryDto));
     }
 
     @GetMapping("/core-metrics")
