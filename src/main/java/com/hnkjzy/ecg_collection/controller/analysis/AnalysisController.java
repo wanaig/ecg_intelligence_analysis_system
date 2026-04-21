@@ -2,15 +2,26 @@ package com.hnkjzy.ecg_collection.controller.analysis;
 
 import com.hnkjzy.ecg_collection.common.result.ApiResponse;
 import com.hnkjzy.ecg_collection.controller.BaseController;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardPageQueryDto;
 import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisDashboardQueryDto;
+import com.hnkjzy.ecg_collection.model.dto.analysis.AnalysisTimeRangeQueryDto;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardPageResultVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDictVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisLatestEcgPageItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportDeviceStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelDistributionVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTrendVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeWardTopVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDimensionStatVo;
 import com.hnkjzy.ecg_collection.service.analysis.AnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +36,38 @@ import java.util.List;
 public class AnalysisController extends BaseController {
 
     private final AnalysisService analysisService;
+
+    @GetMapping("/dashboard/core-metrics")
+    public ApiResponse<AnalysisDashboardCoreMetricsVo> dashboardCoreMetrics(AnalysisTimeRangeQueryDto queryDto) {
+        return ApiResponse.success(analysisService.getDashboardCoreMetrics(queryDto));
+    }
+
+    @GetMapping("/dashboard/warning-level-distribution")
+    public ApiResponse<AnalysisWarningLevelDistributionVo> warningLevelDistribution(AnalysisTimeRangeQueryDto queryDto) {
+        return ApiResponse.success(analysisService.getWarningLevelDistribution(queryDto));
+    }
+
+    @GetMapping("/dashboard/warning-type-ward-top")
+    public ApiResponse<AnalysisWarningTypeWardTopVo> warningTypeWardTop(AnalysisTimeRangeQueryDto queryDto) {
+        return ApiResponse.success(analysisService.getWarningTypeWardTop(queryDto));
+    }
+
+    @GetMapping("/dashboard/warning-trend-7d")
+    public ApiResponse<AnalysisWarningTrendVo> warningTrend7d() {
+        return ApiResponse.success(analysisService.getWarningTrend7d());
+    }
+
+    @PostMapping("/dashboard/pending-warnings/page")
+    public ApiResponse<AnalysisDashboardPageResultVo<AnalysisPendingWarningPageItemVo>> pendingWarningsPage(
+            @RequestBody(required = false) AnalysisDashboardPageQueryDto queryDto) {
+        return ApiResponse.success(analysisService.pagePendingWarnings(queryDto));
+    }
+
+    @PostMapping("/dashboard/latest-ecg/page")
+    public ApiResponse<AnalysisDashboardPageResultVo<AnalysisLatestEcgPageItemVo>> latestEcgPage(
+            @RequestBody(required = false) AnalysisDashboardPageQueryDto queryDto) {
+        return ApiResponse.success(analysisService.pageLatestEcgRecords(queryDto));
+    }
 
     @GetMapping("/core-metrics")
     public ApiResponse<AnalysisCoreMetricsVo> coreMetrics(AnalysisDashboardQueryDto queryDto) {

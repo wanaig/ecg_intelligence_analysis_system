@@ -4,6 +4,290 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hnkjzy.ecg_collection.mapper.analysis.AnalysisMapper">
 
+    <select id="selectDashboardCoreMetrics" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardCoreMetricsVo">
+        SELECT
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                WHERE c.is_deleted = 0
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS ecgTotal,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                WHERE c.is_deleted = 0
+                  AND c.ai_analysis_status IN (0, 1)
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS pendingAnalyse,
+            (
+                SELECT COUNT(1)
+                FROM ecg_collection_record c
+                WHERE c.is_deleted = 0
+                  AND c.report_status = 1
+                <if test="startTime != null">
+                    AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND c.collection_start_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS pendingAudit,
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                  AND w.warning_level = 3
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS abnormalWarning,
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS warningTotal,
+            (
+                SELECT COUNT(1)
+                FROM ecg_diagnosis_report r
+                WHERE r.is_deleted = 0
+                <if test="startTime != null">
+                    AND r.report_create_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND r.report_create_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS reportTotal,
+            (
+                SELECT IFNULL(ROUND(AVG(a.confidence), 2), 0)
+                FROM ecg_ai_diagnosis a
+                WHERE a.is_deleted = 0
+                <if test="startTime != null">
+                    AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND COALESCE(a.diagnosis_time, a.analysis_end_time, a.analysis_start_time) <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS aiAccuracy
+    </select>
+
+    <select id="selectWarningLevelDistribution" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelDistributionVo">
+        SELECT
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                  AND w.warning_level = 1
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS lowRiskCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                  AND w.warning_level = 2
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS middleRiskCount,
+            (
+                SELECT COUNT(1)
+                FROM ecg_abnormal_warning w
+                WHERE w.is_deleted = 0
+                  AND w.warning_level = 3
+                <if test="startTime != null">
+                    AND w.warning_time <![CDATA[>=]]> #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND w.warning_time <![CDATA[<]]> #{endTime}
+                </if>
+            ) AS highRiskCount
+    </select>
+
+    <select id="selectWarningTypeCounts" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeRatioItemVo">
+        SELECT
+            COALESCE(NULLIF(w.warning_type, ''), '未知类型') AS warningType,
+            COUNT(1) AS count
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<]]> #{endTime}
+        </if>
+        GROUP BY COALESCE(NULLIF(w.warning_type, ''), '未知类型')
+        ORDER BY count DESC, warningType ASC
+    </select>
+
+    <select id="selectWardWarningTop" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardWarningTopItemVo">
+        SELECT
+            COALESCE(NULLIF(w.dept_name, ''), '未知病区') AS wardName,
+            COUNT(1) AS warningCount
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<]]> #{endTime}
+        </if>
+        GROUP BY COALESCE(NULLIF(w.dept_name, ''), '未知病区')
+        ORDER BY warningCount DESC, wardName ASC
+        LIMIT 10
+    </select>
+
+    <select id="selectWarningDailyCounts" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDailyCountVo">
+        SELECT
+            DATE_FORMAT(w.warning_time, '%Y-%m-%d') AS warningDate,
+            COUNT(1) AS warningCount
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<]]> #{endTime}
+        </if>
+        GROUP BY DATE_FORMAT(w.warning_time, '%Y-%m-%d')
+        ORDER BY warningDate ASC
+    </select>
+
+    <select id="selectPendingWarningPage" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageItemVo">
+        SELECT
+            w.warning_id AS warningId,
+            w.warning_time AS warningTime,
+            CONCAT(
+                COALESCE(w.patient_name, ''),
+                ' / ',
+                COALESCE(w.gender,
+                         CASE p.gender
+                             WHEN 1 THEN '男'
+                             WHEN 2 THEN '女'
+                             ELSE '未知'
+                         END),
+                ' / ',
+                COALESCE(w.age, p.age, 0),
+                '岁'
+            ) AS patientInfo,
+            COALESCE(NULLIF(w.dept_name, ''), '未知病区') AS ward,
+            COALESCE(NULLIF(w.warning_desc, ''), NULLIF(p.primary_diagnosis, ''), '-') AS clinicalIndicator,
+            CASE w.warning_level
+                WHEN 3 THEN '高危'
+                WHEN 2 THEN '中危'
+                WHEN 1 THEN '低危'
+                ELSE '未知'
+            END AS warningLevel,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS status
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+        WHERE w.is_deleted = 0
+          AND w.handle_status IN (0, 1, 2)
+        <if test="startTime != null">
+            AND w.warning_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND w.warning_time <![CDATA[<]]> #{endTime}
+        </if>
+        ORDER BY w.warning_time DESC, w.warning_id DESC
+    </select>
+
+    <select id="selectLatestEcgPage" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisLatestEcgPageItemVo">
+        SELECT
+            c.record_id AS recordId,
+            c.ecg_no AS ecgNo,
+            c.patient_id AS patientId,
+            c.patient_name AS patientName,
+            COALESCE(c.gender,
+                     CASE p.gender
+                         WHEN 1 THEN '男'
+                         WHEN 2 THEN '女'
+                         ELSE '未知'
+                     END) AS gender,
+            c.age AS age,
+            c.inpatient_no AS inpatientNo,
+            c.dept_id AS deptId,
+            c.dept_name AS deptName,
+            c.bed_no AS bedNo,
+            c.device_id AS deviceId,
+            c.device_name AS deviceName,
+            c.lead_count AS leadCount,
+            c.sampling_rate AS samplingRate,
+            c.collection_duration AS collectionDuration,
+            c.collection_type AS collectionType,
+            CASE c.collection_type
+                WHEN 1 THEN '院内常规采集'
+                WHEN 2 THEN '居家远程采集'
+                WHEN 3 THEN '床旁监护'
+                WHEN 4 THEN '手动上传'
+                ELSE '未知'
+            END AS collectionTypeText,
+            c.collection_start_time AS collectStartTime,
+            c.collection_end_time AS collectEndTime,
+            c.ai_analysis_status AS aiAnalysisStatus,
+            c.report_status AS reportStatus,
+            c.display_status AS displayStatus,
+            CASE c.display_status
+                WHEN 0 THEN '待分析'
+                WHEN 1 THEN '已分析'
+                WHEN 2 THEN '已审核'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '采集失败'
+                ELSE '未知'
+            END AS statusText,
+            c.ai_conclusion_short AS aiConclusionShort,
+            a.ai_conclusion AS aiConclusion
+        FROM ecg_collection_record c
+                 LEFT JOIN patient_info p ON c.patient_id = p.patient_id AND p.is_deleted = 0
+                 LEFT JOIN ecg_ai_diagnosis a ON a.ai_diagnosis_id = (
+                    SELECT ai.ai_diagnosis_id
+                    FROM ecg_ai_diagnosis ai
+                    WHERE ai.record_id = c.record_id
+                      AND ai.is_deleted = 0
+                    ORDER BY ai.diagnosis_time DESC, ai.ai_diagnosis_id DESC
+                    LIMIT 1
+                 )
+        WHERE c.is_deleted = 0
+        <if test="startTime != null">
+            AND c.collection_start_time <![CDATA[>=]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND c.collection_start_time <![CDATA[<]]> #{endTime}
+        </if>
+        ORDER BY c.collection_start_time DESC, c.record_id DESC
+    </select>
+
     <select id="selectCoreMetrics" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo">
         SELECT
             (
