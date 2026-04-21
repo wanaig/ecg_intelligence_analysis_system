@@ -1,10 +1,11 @@
 server:
   port: 8080
-
 spring:
   application:
     name: ecg_collection
-
+  web:
+    resources:
+      add-mappings: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ecg_intelligence_analysis_system?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
