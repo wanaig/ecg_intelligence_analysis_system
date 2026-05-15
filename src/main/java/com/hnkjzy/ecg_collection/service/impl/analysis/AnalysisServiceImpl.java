@@ -18,6 +18,7 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDashboardPageResultVo
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDeviceUsageStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDictVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisLatestEcgPageItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPushEligibleCountVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportDeviceStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportStatusStatVo;
@@ -96,7 +97,10 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
 
         AnalysisDashboardCoreMetricsVo metricsVo = analysisMapper.selectDashboardCoreMetrics(
                 dateRange.getStartTime(),
-                dateRange.getEndTime()
+                dateRange.getEndTime(),
+                parseWarningLevels(query.getWarningLevels()),
+                query.getWarningTypes(),
+                query.getWardIds()
         );
         if (metricsVo == null) {
             metricsVo = new AnalysisDashboardCoreMetricsVo();
@@ -119,7 +123,9 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
 
         AnalysisWarningLevelDistributionVo vo = analysisMapper.selectWarningLevelDistribution(
                 dateRange.getStartTime(),
-                dateRange.getEndTime()
+                dateRange.getEndTime(),
+                query.getWarningTypes(),
+                query.getWardIds()
         );
         if (vo == null) {
             vo = new AnalysisWarningLevelDistributionVo();
@@ -140,7 +146,10 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
 
         List<AnalysisWarningTypeRatioItemVo> warningTypeStats = analysisMapper.selectWarningTypeCounts(
                 dateRange.getStartTime(),
-                dateRange.getEndTime()
+                dateRange.getEndTime(),
+                parseWarningLevels(query.getWarningLevels()),
+                query.getWarningTypes(),
+                query.getWardIds()
         );
         if (warningTypeStats == null) {
             warningTypeStats = new ArrayList<>();
@@ -164,7 +173,10 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
 
         List<AnalysisWardWarningTopItemVo> wardTopStats = analysisMapper.selectWardWarningTop(
                 dateRange.getStartTime(),
-                dateRange.getEndTime()
+                dateRange.getEndTime(),
+                parseWarningLevels(query.getWarningLevels()),
+                query.getWarningTypes(),
+                query.getWardIds()
         );
         if (wardTopStats == null) {
             wardTopStats = Collections.emptyList();
@@ -179,13 +191,17 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
     }
 
     @Override
-    public AnalysisWarningTrendVo getWarningTrend7d() {
+    public AnalysisWarningTrendVo getWarningTrend7d(AnalysisTimeRangeQueryDto queryDto) {
+        AnalysisTimeRangeQueryDto query = normalizeTimeRangeQuery(queryDto);
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(6);
 
         List<AnalysisWarningDailyCountVo> dailyCounts = analysisMapper.selectWarningDailyCounts(
                 startDate.atStartOfDay(),
-                endDate.plusDays(1).atStartOfDay()
+                endDate.plusDays(1).atStartOfDay(),
+                parseWarningLevels(query.getWarningLevels()),
+                query.getWarningTypes(),
+                query.getWardIds()
         );
 
         Map<String, Long> countMap = new HashMap<>();
@@ -223,7 +239,10 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
         IPage<AnalysisPendingWarningPageItemVo> pageData = analysisMapper.selectPendingWarningPage(
                 page,
                 dateRange.getStartTime(),
-                dateRange.getEndTime()
+                dateRange.getEndTime(),
+                parseWarningLevels(query.getWarningLevels()),
+                query.getWarningTypes(),
+                query.getWardIds()
         );
 
         List<AnalysisPendingWarningPageItemVo> records = pageData.getRecords();
@@ -250,7 +269,8 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
         IPage<AnalysisLatestEcgPageItemVo> pageData = analysisMapper.selectLatestEcgPage(
                 page,
                 dateRange.getStartTime(),
-                dateRange.getEndTime()
+                dateRange.getEndTime(),
+                query.getWardIds()
         );
 
         List<AnalysisLatestEcgPageItemVo> records = pageData.getRecords();
@@ -318,11 +338,16 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
         AnalysisWarningFullPageInitVo resultVo = new AnalysisWarningFullPageInitVo();
         resultVo.setHighRiskCount(defaultLong(analysisMapper.countDashboardHighRiskWarnings(
                 dateRange.getStartTime(),
-                dateRange.getEndTime()
+                dateRange.getEndTime(),
+                null,
+                null
         )));
         resultVo.setPendingHandleCount(defaultLong(analysisMapper.countDashboardPendingHandleWarnings(
                 dateRange.getStartTime(),
-                dateRange.getEndTime()
+                dateRange.getEndTime(),
+                null,
+                null,
+                null
         )));
 
         List<DictOptionVo> wardOptions = analysisMapper.selectWardOptions();
@@ -450,8 +475,8 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
     public AnalysisWarningDimensionStatVo getWarningDimensionStats() {
         AnalysisWarningDimensionStatVo result = new AnalysisWarningDimensionStatVo();
 
-        List<AnalysisWarningLevelStatVo> levelStats = analysisMapper.selectWarningLevelStats();
-        List<AnalysisWarningTypeStatVo> typeStats = analysisMapper.selectWarningTypeStats();
+        List<AnalysisWarningLevelStatVo> levelStats = analysisMapper.selectWarningLevelStats(null);
+        List<AnalysisWarningTypeStatVo> typeStats = analysisMapper.selectWarningTypeStats(null, null);
 
         Map<String, Long> levelCountMap = new HashMap<>();
         if (levelStats != null) {
@@ -506,6 +531,48 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
     }
 
     @Override
+    public AnalysisPushEligibleCountVo countPushEligiblePatients(AnalysisTimeRangeQueryDto queryDto) {
+        AnalysisTimeRangeQueryDto query = normalizeTimeRangeQuery(queryDto);
+
+        Integer eligibleCount = analysisMapper.countPushEligiblePatients(
+                parseWarningLevels(query.getWarningLevels()),
+                query.getWarningTypes(),
+                query.getWardIds()
+        );
+
+        AnalysisPushEligibleCountVo vo = new AnalysisPushEligibleCountVo();
+        vo.setEligibleCount(eligibleCount == null ? 0 : eligibleCount);
+        return vo;
+    }
+
+    @Override
+    public AnalysisDashboardPageResultVo<AnalysisPendingWarningPageItemVo> pagePushEligiblePatients(
+            AnalysisDashboardPageQueryDto queryDto) {
+        AnalysisDashboardPageQueryDto query = normalizeDashboardPageQuery(queryDto);
+
+        long pageNum = normalizePageNum(query.getPageNum());
+        long pageSize = normalizePageSize(query.getPageSize());
+        Page<AnalysisPendingWarningPageItemVo> page = new Page<>(pageNum, pageSize);
+        IPage<AnalysisPendingWarningPageItemVo> pageData = analysisMapper.selectPushEligiblePatientsPage(
+                page,
+                parseWarningLevels(query.getWarningLevels()),
+                query.getWarningTypes(),
+                query.getWardIds()
+        );
+
+        List<AnalysisPendingWarningPageItemVo> records = pageData.getRecords();
+        if (records == null) {
+            records = Collections.emptyList();
+        }
+
+        return AnalysisDashboardPageResultVo.<AnalysisPendingWarningPageItemVo>builder()
+                .total(pageData.getTotal())
+                .pages(pageData.getPages())
+                .list(records)
+                .build();
+    }
+
+    @Override
     public AnalysisDictVo getAnalysisDicts() {
         AnalysisDictVo dictVo = new AnalysisDictVo();
 
@@ -530,6 +597,9 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
         AnalysisTimeRangeQueryDto query = queryDto == null ? new AnalysisTimeRangeQueryDto() : queryDto;
         query.setStartTime(trimToNull(query.getStartTime()));
         query.setEndTime(trimToNull(query.getEndTime()));
+        query.setWarningLevels(normalizeList(query.getWarningLevels()));
+        query.setWarningTypes(normalizeList(query.getWarningTypes()));
+        query.setWardIds(normalizeList(query.getWardIds()));
         return query;
     }
 
@@ -537,7 +607,44 @@ public class AnalysisServiceImpl extends BaseServiceImpl implements AnalysisServ
         AnalysisDashboardPageQueryDto query = queryDto == null ? new AnalysisDashboardPageQueryDto() : queryDto;
         query.setStartTime(trimToNull(query.getStartTime()));
         query.setEndTime(trimToNull(query.getEndTime()));
+        query.setWarningLevels(normalizeList(query.getWarningLevels()));
+        query.setWarningTypes(normalizeList(query.getWarningTypes()));
+        query.setWardIds(normalizeList(query.getWardIds()));
         return query;
+    }
+
+    private <T> List<T> normalizeList(List<T> list) {
+        return list == null || list.isEmpty() ? null : list;
+    }
+
+    private List<Integer> parseWarningLevels(List<String> levels) {
+        if (levels == null) return null;
+        List<Integer> result = new ArrayList<>();
+        for (String level : levels) {
+            if (level == null) continue;
+            switch (level.trim()) {
+                case "低危":
+                case "1":
+                    result.add(1);
+                    break;
+                case "中危":
+                case "2":
+                    result.add(2);
+                    break;
+                case "高危":
+                case "3":
+                    result.add(3);
+                    break;
+                default:
+                    try {
+                        int val = Integer.parseInt(level.trim());
+                        if (val >= 1 && val <= 3) result.add(val);
+                    } catch (NumberFormatException ignored) {
+                    }
+                    break;
+            }
+        }
+        return result.isEmpty() ? null : result;
     }
 
     private AnalysisWarningFullPageQueryDto normalizeFullWarningPageQuery(AnalysisWarningFullPageQueryDto queryDto) {

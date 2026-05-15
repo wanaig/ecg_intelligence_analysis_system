@@ -57,6 +57,24 @@
                 SELECT COUNT(1)
                 FROM ecg_abnormal_warning w
                 WHERE w.is_deleted = 0
+                <if test="warningLevels != null and warningLevels.size() > 0">
+                    AND w.warning_level IN
+                    <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="warningTypes != null and warningTypes.size() > 0">
+                    AND w.warning_type IN
+                    <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="wardIds != null and wardIds.size() > 0">
+                    AND w.dept_id IN
+                    <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
                 <if test="startTime != null">
                     AND w.warning_time <![CDATA[>=]]> #{startTime}
                 </if>
@@ -95,6 +113,18 @@
                 FROM ecg_abnormal_warning w
                 WHERE w.is_deleted = 0
                   AND w.warning_level = 1
+                <if test="warningTypes != null and warningTypes.size() > 0">
+                    AND w.warning_type IN
+                    <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="wardIds != null and wardIds.size() > 0">
+                    AND w.dept_id IN
+                    <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
                 <if test="startTime != null">
                     AND w.warning_time <![CDATA[>=]]> #{startTime}
                 </if>
@@ -107,6 +137,18 @@
                 FROM ecg_abnormal_warning w
                 WHERE w.is_deleted = 0
                   AND w.warning_level = 2
+                <if test="warningTypes != null and warningTypes.size() > 0">
+                    AND w.warning_type IN
+                    <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="wardIds != null and wardIds.size() > 0">
+                    AND w.dept_id IN
+                    <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
                 <if test="startTime != null">
                     AND w.warning_time <![CDATA[>=]]> #{startTime}
                 </if>
@@ -119,6 +161,18 @@
                 FROM ecg_abnormal_warning w
                 WHERE w.is_deleted = 0
                   AND w.warning_level = 3
+                <if test="warningTypes != null and warningTypes.size() > 0">
+                    AND w.warning_type IN
+                    <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="wardIds != null and wardIds.size() > 0">
+                    AND w.dept_id IN
+                    <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
                 <if test="startTime != null">
                     AND w.warning_time <![CDATA[>=]]> #{startTime}
                 </if>
@@ -134,6 +188,24 @@
             COUNT(1) AS count
         FROM ecg_abnormal_warning w
         WHERE w.is_deleted = 0
+        <if test="warningLevels != null and warningLevels.size() > 0">
+            AND w.warning_level IN
+            <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="warningTypes != null and warningTypes.size() > 0">
+            AND w.warning_type IN
+            <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
         <if test="startTime != null">
             AND w.warning_time <![CDATA[>=]]> #{startTime}
         </if>
@@ -150,6 +222,24 @@
             COUNT(1) AS warningCount
         FROM ecg_abnormal_warning w
         WHERE w.is_deleted = 0
+        <if test="warningLevels != null and warningLevels.size() > 0">
+            AND w.warning_level IN
+            <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="warningTypes != null and warningTypes.size() > 0">
+            AND w.warning_type IN
+            <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
         <if test="startTime != null">
             AND w.warning_time <![CDATA[>=]]> #{startTime}
         </if>
@@ -167,6 +257,24 @@
             COUNT(1) AS warningCount
         FROM ecg_abnormal_warning w
         WHERE w.is_deleted = 0
+        <if test="warningLevels != null and warningLevels.size() > 0">
+            AND w.warning_level IN
+            <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="warningTypes != null and warningTypes.size() > 0">
+            AND w.warning_type IN
+            <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
         <if test="startTime != null">
             AND w.warning_time <![CDATA[>=]]> #{startTime}
         </if>
@@ -214,6 +322,24 @@
                  LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
         WHERE w.is_deleted = 0
           AND w.handle_status IN (0, 1, 2)
+        <if test="warningLevels != null and warningLevels.size() > 0">
+            AND w.warning_level IN
+            <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="warningTypes != null and warningTypes.size() > 0">
+            AND w.warning_type IN
+            <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
         <if test="startTime != null">
             AND w.warning_time <![CDATA[>=]]> #{startTime}
         </if>
@@ -279,6 +405,12 @@
                     LIMIT 1
                  )
         WHERE c.is_deleted = 0
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND c.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
         <if test="startTime != null">
             AND c.collection_start_time <![CDATA[>=]]> #{startTime}
         </if>
@@ -469,6 +601,18 @@
         FROM ecg_abnormal_warning w
         WHERE w.is_deleted = 0
           AND w.warning_level = 3
+        <if test="warningTypes != null and warningTypes.size() > 0">
+            AND w.warning_type IN
+            <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
         <if test="startTime != null">
             AND w.warning_time <![CDATA[>=]]> #{startTime}
         </if>
@@ -482,6 +626,24 @@
         FROM ecg_abnormal_warning w
         WHERE w.is_deleted = 0
           AND w.handle_status IN (0, 1, 2)
+        <if test="warningLevels != null and warningLevels.size() > 0">
+            AND w.warning_level IN
+            <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="warningTypes != null and warningTypes.size() > 0">
+            AND w.warning_type IN
+            <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
         <if test="startTime != null">
             AND w.warning_time <![CDATA[>=]]> #{startTime}
         </if>
@@ -688,6 +850,12 @@
                    FROM ecg_abnormal_warning w
                    WHERE w.is_deleted = 0
                      AND w.warning_level = 3
+                   <if test="warningTypes != null and warningTypes.size() > 0">
+                       AND w.warning_type IN
+                       <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                           #{item}
+                       </foreach>
+                   </if>
                ) AS count
         UNION ALL
         SELECT '中危' AS level,
@@ -696,6 +864,12 @@
                    FROM ecg_abnormal_warning w
                    WHERE w.is_deleted = 0
                      AND w.warning_level = 2
+                   <if test="warningTypes != null and warningTypes.size() > 0">
+                       AND w.warning_type IN
+                       <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                           #{item}
+                       </foreach>
+                   </if>
                ) AS count
         UNION ALL
         SELECT '低危' AS level,
@@ -704,6 +878,12 @@
                    FROM ecg_abnormal_warning w
                    WHERE w.is_deleted = 0
                      AND w.warning_level = 1
+                   <if test="warningTypes != null and warningTypes.size() > 0">
+                       AND w.warning_type IN
+                       <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                           #{item}
+                       </foreach>
+                   </if>
                ) AS count
     </select>
 
@@ -715,6 +895,18 @@
         WHERE w.is_deleted = 0
           AND w.warning_type IS NOT NULL
           AND w.warning_type != ''
+        <if test="warningLevels != null and warningLevels.size() > 0">
+            AND w.warning_level IN
+            <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
         GROUP BY w.warning_type
         ORDER BY count DESC, warningType ASC
     </select>
@@ -949,5 +1141,93 @@
             0
         )
     </insert>
+
+    <select id="countPushEligiblePatients" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT w.patient_id)
+        FROM ecg_abnormal_warning w
+        WHERE w.is_deleted = 0
+          AND w.handle_status IN (0, 1, 2)
+          AND w.patient_id IS NOT NULL
+        <if test="warningLevels != null and warningLevels.size() > 0">
+            AND w.warning_level IN
+            <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="warningTypes != null and warningTypes.size() > 0">
+            AND w.warning_type IN
+            <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectPushEligiblePatientsPage" resultType="com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageItemVo">
+        SELECT
+            w.warning_id AS warningId,
+            w.warning_time AS warningTime,
+            CONCAT(
+                COALESCE(w.patient_name, ''),
+                ' / ',
+                COALESCE(w.gender,
+                         CASE p.gender
+                             WHEN 1 THEN '男'
+                             WHEN 2 THEN '女'
+                             ELSE '未知'
+                         END),
+                ' / ',
+                COALESCE(w.age, p.age, 0),
+                '岁'
+            ) AS patientInfo,
+            COALESCE(NULLIF(w.dept_name, ''), '未知病区') AS ward,
+            COALESCE(NULLIF(w.warning_desc, ''), NULLIF(p.primary_diagnosis, ''), '-') AS clinicalIndicator,
+            CASE w.warning_level
+                WHEN 3 THEN '高危'
+                WHEN 2 THEN '中危'
+                WHEN 1 THEN '低危'
+                ELSE '未知'
+            END AS warningLevel,
+            w.warning_type AS warningType,
+            w.patient_id AS patientId,
+            w.dept_id AS deptId,
+            CASE w.handle_status
+                WHEN 0 THEN '待确认'
+                WHEN 1 THEN '待处理'
+                WHEN 2 THEN '处理中'
+                WHEN 3 THEN '已处理'
+                WHEN 4 THEN '已忽略'
+                ELSE '未知'
+            END AS status
+        FROM ecg_abnormal_warning w
+                 LEFT JOIN patient_info p ON w.patient_id = p.patient_id AND p.is_deleted = 0
+        WHERE w.is_deleted = 0
+          AND w.handle_status IN (0, 1, 2)
+          AND w.patient_id IS NOT NULL
+        <if test="warningLevels != null and warningLevels.size() > 0">
+            AND w.warning_level IN
+            <foreach item="item" collection="warningLevels" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="warningTypes != null and warningTypes.size() > 0">
+            AND w.warning_type IN
+            <foreach item="item" collection="warningTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="wardIds != null and wardIds.size() > 0">
+            AND w.dept_id IN
+            <foreach item="item" collection="wardIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY w.warning_time DESC, w.warning_id DESC
+    </select>
 
 </mapper>

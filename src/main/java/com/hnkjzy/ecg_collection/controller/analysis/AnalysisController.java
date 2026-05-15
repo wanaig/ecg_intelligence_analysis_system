@@ -22,6 +22,7 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningIncludeResultV
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTrendVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningTypeWardTopVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningDimensionStatVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPushEligibleCountVo;
 import jakarta.servlet.http.HttpServletRequest;
 import com.hnkjzy.ecg_collection.service.analysis.AnalysisService;
 import lombok.RequiredArgsConstructor;
@@ -60,8 +61,8 @@ public class AnalysisController extends BaseController {
     }
 
     @GetMapping("/dashboard/warning-trend-7d")
-    public ApiResponse<AnalysisWarningTrendVo> warningTrend7d() {
-        return ApiResponse.success(analysisService.getWarningTrend7d());
+    public ApiResponse<AnalysisWarningTrendVo> warningTrend7d(AnalysisTimeRangeQueryDto queryDto) {
+        return ApiResponse.success(analysisService.getWarningTrend7d(queryDto));
     }
 
     @PostMapping("/dashboard/pending-warnings/page")
@@ -74,6 +75,17 @@ public class AnalysisController extends BaseController {
     public ApiResponse<AnalysisDashboardPageResultVo<AnalysisLatestEcgPageItemVo>> latestEcgPage(
             @RequestBody(required = false) AnalysisDashboardPageQueryDto queryDto) {
         return ApiResponse.success(analysisService.pageLatestEcgRecords(queryDto));
+    }
+
+    @GetMapping("/dashboard/push/eligible-count")
+    public ApiResponse<AnalysisPushEligibleCountVo> pushEligibleCount(AnalysisTimeRangeQueryDto queryDto) {
+        return ApiResponse.success(analysisService.countPushEligiblePatients(queryDto));
+    }
+
+    @PostMapping("/dashboard/push/eligible-patients/page")
+    public ApiResponse<AnalysisDashboardPageResultVo<AnalysisPendingWarningPageItemVo>> pushEligiblePatientsPage(
+            @RequestBody(required = false) AnalysisDashboardPageQueryDto queryDto) {
+        return ApiResponse.success(analysisService.pagePushEligiblePatients(queryDto));
     }
 
     @GetMapping("/dashboard/warnings/{alertId}/detail")

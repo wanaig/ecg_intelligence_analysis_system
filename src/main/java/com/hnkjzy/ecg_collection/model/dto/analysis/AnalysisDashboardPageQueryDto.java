@@ -4,6 +4,8 @@ import com.hnkjzy.ecg_collection.model.dto.BaseDto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 /**
  * 数据分析大盘分页查询参数。
  */
@@ -15,4 +17,7 @@ public class AnalysisDashboardPageQueryDto extends BaseDto {
     private String endTime;
     private Long pageNum;
     private Long pageSize;
+    private List<String> warningLevels;
+    private List<String> warningTypes;
+    private List<String> wardIds;
 }

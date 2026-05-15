@@ -11,6 +11,7 @@ import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisCoreMetricsVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisDictVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisLatestEcgPageItemVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPendingWarningPageItemVo;
+import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisPushEligibleCountVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisReportDeviceStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWardMeasureStatVo;
 import com.hnkjzy.ecg_collection.model.vo.analysis.AnalysisWarningLevelDistributionVo;
@@ -36,7 +37,7 @@ public interface AnalysisService extends BaseService {
 
     AnalysisWarningTypeWardTopVo getWarningTypeWardTop(AnalysisTimeRangeQueryDto queryDto);
 
-    AnalysisWarningTrendVo getWarningTrend7d();
+    AnalysisWarningTrendVo getWarningTrend7d(AnalysisTimeRangeQueryDto queryDto);
 
     AnalysisDashboardPageResultVo<AnalysisPendingWarningPageItemVo> pagePendingWarnings(AnalysisDashboardPageQueryDto queryDto);
 
@@ -49,6 +50,10 @@ public interface AnalysisService extends BaseService {
     AnalysisWarningIncludeResultVo includeWarning(AnalysisWarningIncludeDto includeDto, HttpServletRequest request);
 
     AnalysisCoreMetricsVo getCoreMetrics(AnalysisDashboardQueryDto queryDto);
+
+    AnalysisPushEligibleCountVo countPushEligiblePatients(AnalysisTimeRangeQueryDto queryDto);
+
+    AnalysisDashboardPageResultVo<AnalysisPendingWarningPageItemVo> pagePushEligiblePatients(AnalysisDashboardPageQueryDto queryDto);
 
     List<AnalysisWardMeasureStatVo> getWardMeasureStats();
 

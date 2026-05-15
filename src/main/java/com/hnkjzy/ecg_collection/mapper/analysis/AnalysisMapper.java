@@ -33,42 +33,74 @@ import java.util.List;
 public interface AnalysisMapper extends BaseMapperX<EcgStatisticsResultEntity> {
 
     AnalysisDashboardCoreMetricsVo selectDashboardCoreMetrics(@Param("startTime") LocalDateTime startTime,
-                                                              @Param("endTime") LocalDateTime endTime);
+                                                               @Param("endTime") LocalDateTime endTime,
+                                                               @Param("warningLevels") List<Integer> warningLevels,
+                                                               @Param("warningTypes") List<String> warningTypes,
+                                                               @Param("wardIds") List<String> wardIds);
 
     AnalysisWarningLevelDistributionVo selectWarningLevelDistribution(@Param("startTime") LocalDateTime startTime,
-                                                                      @Param("endTime") LocalDateTime endTime);
+                                                                       @Param("endTime") LocalDateTime endTime,
+                                                                       @Param("warningTypes") List<String> warningTypes,
+                                                                       @Param("wardIds") List<String> wardIds);
 
     List<AnalysisWarningTypeRatioItemVo> selectWarningTypeCounts(@Param("startTime") LocalDateTime startTime,
-                                                                 @Param("endTime") LocalDateTime endTime);
+                                                                  @Param("endTime") LocalDateTime endTime,
+                                                                  @Param("warningLevels") List<Integer> warningLevels,
+                                                                  @Param("warningTypes") List<String> warningTypes,
+                                                                  @Param("wardIds") List<String> wardIds);
 
     List<AnalysisWardWarningTopItemVo> selectWardWarningTop(@Param("startTime") LocalDateTime startTime,
-                                                            @Param("endTime") LocalDateTime endTime);
+                                                             @Param("endTime") LocalDateTime endTime,
+                                                             @Param("warningLevels") List<Integer> warningLevels,
+                                                             @Param("warningTypes") List<String> warningTypes,
+                                                             @Param("wardIds") List<String> wardIds);
 
     List<AnalysisWarningDailyCountVo> selectWarningDailyCounts(@Param("startTime") LocalDateTime startTime,
-                                                               @Param("endTime") LocalDateTime endTime);
+                                                                @Param("endTime") LocalDateTime endTime,
+                                                                @Param("warningLevels") List<Integer> warningLevels,
+                                                                @Param("warningTypes") List<String> warningTypes,
+                                                                @Param("wardIds") List<String> wardIds);
 
     IPage<AnalysisPendingWarningPageItemVo> selectPendingWarningPage(Page<AnalysisPendingWarningPageItemVo> page,
-                                                                     @Param("startTime") LocalDateTime startTime,
-                                                                     @Param("endTime") LocalDateTime endTime);
+                                                                      @Param("startTime") LocalDateTime startTime,
+                                                                      @Param("endTime") LocalDateTime endTime,
+                                                                      @Param("warningLevels") List<Integer> warningLevels,
+                                                                      @Param("warningTypes") List<String> warningTypes,
+                                                                      @Param("wardIds") List<String> wardIds);
 
     IPage<AnalysisLatestEcgPageItemVo> selectLatestEcgPage(Page<AnalysisLatestEcgPageItemVo> page,
-                                                           @Param("startTime") LocalDateTime startTime,
-                                                           @Param("endTime") LocalDateTime endTime);
+                                                            @Param("startTime") LocalDateTime startTime,
+                                                            @Param("endTime") LocalDateTime endTime,
+                                                            @Param("wardIds") List<String> wardIds);
 
     AnalysisWarningDetailVo selectDashboardWarningDetail(@Param("alertId") Long alertId);
 
     IPage<AnalysisWarningFullPageItemVo> selectDashboardFullWarningPage(Page<AnalysisWarningFullPageItemVo> page,
-                                                                        @Param("req") AnalysisWarningFullPageQueryDto req,
-                                                                        @Param("alertLevelCode") Integer alertLevelCode,
-                                                                        @Param("alertStatusCode") Integer alertStatusCode,
-                                                                        @Param("startTime") LocalDateTime startTime,
-                                                                        @Param("endTime") LocalDateTime endTime);
+                                                                         @Param("req") AnalysisWarningFullPageQueryDto req,
+                                                                         @Param("alertLevelCode") Integer alertLevelCode,
+                                                                         @Param("alertStatusCode") Integer alertStatusCode,
+                                                                         @Param("startTime") LocalDateTime startTime,
+                                                                         @Param("endTime") LocalDateTime endTime);
 
     Long countDashboardHighRiskWarnings(@Param("startTime") LocalDateTime startTime,
-                                        @Param("endTime") LocalDateTime endTime);
+                                         @Param("endTime") LocalDateTime endTime,
+                                         @Param("warningTypes") List<String> warningTypes,
+                                         @Param("wardIds") List<String> wardIds);
 
     Long countDashboardPendingHandleWarnings(@Param("startTime") LocalDateTime startTime,
-                                             @Param("endTime") LocalDateTime endTime);
+                                              @Param("endTime") LocalDateTime endTime,
+                                              @Param("warningLevels") List<Integer> warningLevels,
+                                              @Param("warningTypes") List<String> warningTypes,
+                                              @Param("wardIds") List<String> wardIds);
+
+    Integer countPushEligiblePatients(@Param("warningLevels") List<Integer> warningLevels,
+                                       @Param("warningTypes") List<String> warningTypes,
+                                       @Param("wardIds") List<String> wardIds);
+
+    IPage<AnalysisPendingWarningPageItemVo> selectPushEligiblePatientsPage(Page<AnalysisPendingWarningPageItemVo> page,
+                                                                            @Param("warningLevels") List<Integer> warningLevels,
+                                                                            @Param("warningTypes") List<String> warningTypes,
+                                                                            @Param("wardIds") List<String> wardIds);
 
     AnalysisWarningIncludeSourceVo selectWarningIncludeSource(@Param("warningId") Long warningId);
 
@@ -84,7 +116,7 @@ public interface AnalysisMapper extends BaseMapperX<EcgStatisticsResultEntity> {
                                    @Param("latestUpdateTime") LocalDateTime latestUpdateTime);
 
     Long selectResearchIdByPatientRecord(@Param("patientId") Long patientId,
-                                         @Param("recordId") Long recordId);
+                                          @Param("recordId") Long recordId);
 
     Long selectMaxResearchIdInRangeForUpdate(@Param("maxAllowedId") Long maxAllowedId);
 
@@ -94,14 +126,15 @@ public interface AnalysisMapper extends BaseMapperX<EcgStatisticsResultEntity> {
                                     @Param("createTime") LocalDateTime createTime);
 
     AnalysisCoreMetricsVo selectCoreMetrics(@Param("startTime") LocalDateTime startTime,
-                                            @Param("endTime") LocalDateTime endTime,
-                                            @Param("wardId") Long wardId);
+                                             @Param("endTime") LocalDateTime endTime,
+                                             @Param("wardId") Long wardId);
 
     List<AnalysisWardMeasureStatVo> selectWardMeasureStats();
 
-    List<AnalysisWarningLevelStatVo> selectWarningLevelStats();
+    List<AnalysisWarningLevelStatVo> selectWarningLevelStats(@Param("warningTypes") List<String> warningTypes);
 
-    List<AnalysisWarningTypeStatVo> selectWarningTypeStats();
+    List<AnalysisWarningTypeStatVo> selectWarningTypeStats(@Param("warningLevels") List<Integer> warningLevels,
+                                                            @Param("wardIds") List<String> wardIds);
 
     List<AnalysisReportStatusStatVo> selectReportStatusStats();
 
