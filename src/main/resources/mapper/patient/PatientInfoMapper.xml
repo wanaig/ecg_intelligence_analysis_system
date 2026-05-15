@@ -241,4 +241,129 @@
                     AND w.status = 1
                 ORDER BY w.sort_num ASC, w.ward_id ASC
         </select>
+
+    <select id="selectPatientDetailEcho" resultType="com.hnkjzy.ecg_collection.model.vo.patient.PatientDetailEchoVo">
+        SELECT
+            p.patient_id AS id,
+            p.patient_name AS name,
+            CASE p.gender
+                WHEN 1 THEN 'MALE'
+                WHEN 2 THEN 'FEMALE'
+                ELSE 'UNKNOWN'
+            END AS gender,
+            CASE p.gender
+                WHEN 1 THEN '男'
+                WHEN 2 THEN '女'
+                ELSE '未知'
+            END AS genderText,
+            p.age AS age,
+            p.inpatient_no AS inpatientNo,
+            w.ward_name AS ward,
+            b.bed_no AS bedNo,
+            CASE p.patient_status
+                WHEN 1 THEN 'IN_HOSPITAL'
+                WHEN 2 THEN 'DISCHARGED'
+                WHEN 3 THEN 'HOME_FOLLOW'
+                ELSE 'UNKNOWN'
+            END AS status,
+            CASE p.patient_status
+                WHEN 1 THEN '在院'
+                WHEN 2 THEN '出院'
+                WHEN 3 THEN '居家随访'
+                ELSE '未知'
+            END AS statusText,
+            CASE p.risk_level
+                WHEN 1 THEN 'LOW'
+                WHEN 2 THEN 'MEDIUM'
+                WHEN 3 THEN 'MEDIUM_HIGH'
+                WHEN 4 THEN 'HIGH'
+                ELSE 'UNKNOWN'
+            END AS riskLevel,
+            CASE p.risk_level
+                WHEN 1 THEN '低危'
+                WHEN 2 THEN '中危'
+                WHEN 3 THEN '中高危'
+                WHEN 4 THEN '高危'
+                ELSE '未知'
+            END AS riskLevelText,
+            CAST(p.device_id AS CHAR) AS deviceNo,
+            p.admission_time AS admissionTime,
+            p.discharge_time AS dischargeTime,
+            p.primary_diagnosis AS diagnosis,
+            p.ecg_count AS ecgCount,
+            p.latest_ecg_time AS lastEcgTime
+        FROM patient_info p
+                 LEFT JOIN sys_ward w ON p.ward_id = w.ward_id AND w.is_deleted = 0
+                 LEFT JOIN sys_bed b ON p.bed_id = b.bed_id AND b.is_deleted = 0
+                 LEFT JOIN ecg_device d ON p.device_id = d.device_id AND d.is_deleted = 0
+        WHERE p.patient_id = #{patientId}
+          AND p.is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- ==================== 冗余表同步更新 ==================== -->
+
+    <update id="updateCollectionRecordPatient">
+        UPDATE ecg_collection_record
+        SET patient_name = #{patientName},
+            gender = #{gender},
+            age = #{age},
+            inpatient_no = #{inpatientNo}
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateAiDiagnosisPatient">
+        UPDATE ecg_ai_diagnosis
+        SET patient_name = #{patientName},
+            gender = #{gender},
+            age = #{age},
+            inpatient_no = #{inpatientNo}
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateDiagnosisReportPatient">
+        UPDATE ecg_diagnosis_report
+        SET patient_name = #{patientName},
+            gender = #{gender},
+            age = #{age},
+            inpatient_no = #{inpatientNo}
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateAbnormalWarningPatient">
+        UPDATE ecg_abnormal_warning
+        SET patient_name = #{patientName},
+            gender = #{gender},
+            age = #{age},
+            inpatient_no = #{inpatientNo}
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateRealTimeMonitorPatient">
+        UPDATE ecg_real_time_monitor
+        SET patient_name = #{patientName}
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateFollowUpRecordPatient">
+        UPDATE patient_follow_up_record
+        SET patient_name = #{patientName}
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
+
+    <update id="updateResearchDataPatient">
+        UPDATE ecg_research_data
+        SET patient_name = #{patientName},
+            gender = #{gender},
+            age = #{age},
+            inpatient_no = #{inpatientNo}
+        WHERE patient_id = #{patientId}
+          AND is_deleted = 0
+    </update>
 </mapper>

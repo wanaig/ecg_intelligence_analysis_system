@@ -224,6 +224,8 @@
 | 95 | 数据分析-预警单条详情 | GET | /api/analysis/dashboard/warnings/{alertId}/detail |
 | 96 | 数据分析-全量预警列表前置加载 | POST | /api/analysis/dashboard/warnings/full-page/init |
 | 97 | 预警纳入科研/重点监护 | POST | /api/analysis/dashboard/warnings/include |
+| 98 | 患者详情回响（弹窗初始化） | GET | /api/patient/{id} |
+| 99 | 修改患者信息 | PUT | /api/patient/{patientId} |
 
 ---
 
@@ -6841,3 +6843,196 @@ list[] 字段：
 | AI 诊断记录不存在 | 404 | AI 诊断记录不存在 |
 | 当前用户无审核权限 | 403 | 无 AI 诊断审核权限 |
 | 已审核记录重复提交 | 400 | 该诊断记录已审核，不能重复提交 |
+
+---
+
+## 43. 患者管理写接口规范
+
+## 43.1 患者详情回响接口
+
+### 43.1.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 患者详情回响 |
+| 业务作用 | 打开患者详情弹窗或修改弹窗时初始化数据 |
+| 请求路径 | /api/patient/{id} |
+| 请求方式 | GET |
+| Content-Type | application/json |
+| 权限码 | patient:detail:read |
+
+### 43.1.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | id | long | 是 | 患者唯一 ID |
+
+### 43.1.3 出参说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | long | 患者ID |
+| name | string | 患者姓名 |
+| gender | string | 性别枚举（MALE/FEMALE） |
+| genderText | string | 性别文本（男/女） |
+| age | integer | 年龄 |
+| inpatientNo | string | 住院号/居家编号 |
+| ward | string | 病区名称 |
+| bedNo | string | 床位号 |
+| status | string | 患者状态枚举（IN_HOSPITAL/DISCHARGED/HOME_FOLLOW） |
+| statusText | string | 患者状态文本（在院/出院/居家随访） |
+| riskLevel | string | 风险等级枚举（LOW/MEDIUM/MEDIUM_HIGH/HIGH） |
+| riskLevelText | string | 风险等级文本（低危/中危/中高危/高危） |
+| deviceNo | string | 设备编号 |
+| admissionTime | string | 入院时间（ISO-8601） |
+| dischargeTime | string/null | 出院时间（ISO-8601） |
+| diagnosis | string | 主要诊断 |
+| ecgCount | integer | 心电采集次数 |
+| lastEcgTime | string | 最新采集时间（ISO-8601） |
+
+### 43.1.4 完整请求示例
+
+```http
+GET /api/patient/1904 HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+```
+
+### 43.1.5 完整响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": {
+    "id": 1904,
+    "name": "陈敏",
+    "gender": "FEMALE",
+    "genderText": "女",
+    "age": 49,
+    "inpatientNo": "ZY202604004",
+    "ward": "冠心监护病区",
+    "bedNo": "ICU-01",
+    "status": "IN_HOSPITAL",
+    "statusText": "在院",
+    "riskLevel": "HIGH",
+    "riskLevelText": "高危",
+    "deviceNo": "1804",
+    "admissionTime": "2026-04-15T14:35:00",
+    "dischargeTime": null,
+    "diagnosis": "急性冠脉综合征（监护中）",
+    "ecgCount": 5,
+    "lastEcgTime": "2026-04-18T09:40:00"
+  },
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 43.2 修改患者信息接口
+
+### 43.2.1 接口信息
+
+| 项 | 内容 |
+|---|---|
+| 接口名称 | 修改患者信息 |
+| 业务作用 | 修改患者基本信息并同步冗余表数据 |
+| 请求路径 | /api/patient/{patientId} |
+| 请求方式 | PUT |
+| Content-Type | application/json |
+| 权限码 | patient:update |
+
+### 43.2.2 请求入参
+
+| 参数位置 | 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|---|
+| Path | patientId | long | 是 | 患者唯一 ID |
+| Body | name | string | 否 | 患者姓名 |
+| Body | gender | string | 否 | 性别枚举（MALE/FEMALE） |
+| Body | age | integer | 否 | 年龄 |
+| Body | ward | string | 否 | 病区名称 |
+| Body | bedNo | string | 否 | 床位号 |
+| Body | deviceNo | string | 否 | 设备编号 |
+| Body | inpatientNo | string | 否 | 住院号/居家编号 |
+| Body | riskLevel | string | 否 | 风险等级枚举（LOW/MEDIUM/MEDIUM_HIGH/HIGH） |
+| Body | status | string | 否 | 患者状态枚举（IN_HOSPITAL/DISCHARGED/HOME_FOLLOW） |
+| Body | admissionTime | string | 否 | 入院时间（ISO-8601） |
+| Body | dischargeTime | string | 否 | 出院时间（ISO-8601，可为空） |
+| Body | diagnosis | string | 否 | 主要诊断 |
+
+### 43.2.3 出参说明
+
+无业务数据返回，成功时 data 为 null。
+
+### 43.2.4 冗余表同步规则
+
+修改患者信息时，系统自动同步以下冗余表的患者快照字段：
+
+| 冗余表 | 同步字段 |
+|---|---|
+| ecg_collection_record | patient_name, gender, age, inpatient_no |
+| ecg_ai_diagnosis | patient_name, gender, age, inpatient_no |
+| ecg_diagnosis_report | patient_name, gender, age, inpatient_no |
+| ecg_abnormal_warning | patient_name, gender, age, inpatient_no |
+| ecg_real_time_monitor | patient_name |
+| patient_follow_up_record | patient_name |
+| ecg_research_data | patient_name, gender, age, inpatient_no |
+
+### 43.2.5 完整请求示例
+
+```http
+PUT /api/patient/1904 HTTP/1.1
+Host: 127.0.0.1:8080
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "陈敏",
+  "gender": "FEMALE",
+  "age": 50,
+  "ward": "冠心监护病区",
+  "bedNo": "ICU-01",
+  "deviceNo": "1804",
+  "inpatientNo": "ZY202604004",
+  "riskLevel": "HIGH",
+  "status": "IN_HOSPITAL",
+  "admissionTime": "2026-04-15T14:35:00",
+  "dischargeTime": null,
+  "diagnosis": "急性冠脉综合征（恢复期）"
+}
+```
+
+### 43.2.6 完整响应示例
+
+```json
+{
+  "code": 0,
+  "message": "成功",
+  "data": null,
+  "timestamp": 1776501256203
+}
+```
+
+---
+
+## 43.3 患者管理写接口业务规则
+
+1. 患者详情回响接口用于详情弹窗和修改弹窗初始化数据，返回枚举字符串和中文文本双字段。
+2. 修改患者信息接口支持部分更新，前端未传的字段保留原值。
+3. 修改接口使用事务管理，主表更新失败时自动回滚。
+4. 冗余表同步在事务内执行，确保数据一致性。
+5. 性别枚举：MALE（男）、FEMALE（女）。
+6. 风险等级枚举：LOW（低危）、MEDIUM（中危）、MEDIUM_HIGH（中高危）、HIGH（高危）。
+7. 患者状态枚举：IN_HOSPITAL（在院）、DISCHARGED（出院）、HOME_FOLLOW（居家随访）。
+
+## 43.4 患者管理写接口错误场景
+
+| 场景 | code | message 示例 |
+|---|---|---|
+| patientId 为空或非法 | 400 | patientId 参数不合法 |
+| gender 传入非法值 | 400 | gender 参数不合法，应为 MALE 或 FEMALE |
+| riskLevel 传入非法值 | 400 | riskLevel 参数不合法，应为 LOW/MEDIUM/MEDIUM_HIGH/HIGH |
+| status 传入非法值 | 400 | patientStatus 参数不合法，应为 IN_HOSPITAL/DISCHARGED/HOME_FOLLOW |
+| 患者不存在 | 404 | 患者不存在 |
+| 更新失败 | 400 | 更新患者信息失败 |
