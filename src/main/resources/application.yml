@@ -8,7 +8,7 @@ spring:
       add-mappings: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:ecg_intelligence_analysis_system}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
@@ -56,7 +56,7 @@ springdoc:
 # JWT 基础配置
 jwt:
   # HS256 至少 32 字节
-  secret-key: ${JWT_SECRET_KEY}
+  secret-key: ${JWT_SECRET_KEY:ecg_collection_demo_secret_key_32bytes_plus}
   expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
   issuer: ${JWT_ISSUER:ecg-collection}
 
